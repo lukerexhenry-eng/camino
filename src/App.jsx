@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Flame, Star, Volume2, Mic, Check, Lock, ChevronRight, Trophy, ArrowLeft, Sparkles, Wand2, Loader2, Zap, Play, Link2, Film, ArrowRight, GraduationCap, Globe, BookOpen, X, Award, BarChart3, StickyNote, Trash2, Users, Square, ChevronDown, Headphones, FileText } from 'lucide-react';
 
-// Persistence — saves/loads from the browser's storage. Only works on a real deployed site, not in this preview.
 const STORAGE_KEY = 'camino_progress_v1';
 const loadSaved = () => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; } };
 
@@ -167,6 +166,34 @@ const VIDEO_TIERS = [
   { minLevel: 6, tier: 'Intermediate', emoji: '🌳', desc: 'Real conversations. Your stretch.', url: 'https://app.dreaming.com/spanish/browse?level=intermediate' },
 ];
 
+// Real, fixed Colombian dates — when today matches, this overrides everything else with something genuinely timely.
+const COLOMBIA_DATES = {
+  '1-1': "It's New Year's Day — ask what traditions their family follows (many Colombians eat grapes at midnight for luck!).",
+  '7-20': "It's Colombian Independence Day 🇨🇴 — ask how their family celebrates it.",
+  '8-7': "It's Battle of Boyacá day — ask if they learned about it in school growing up.",
+  '12-7': "It's Día de las Velitas — ask if their family still lights candles tonight.",
+  '12-25': "It's Navidad — ask what Christmas looks like in their hometown.",
+};
+// Tied to your actual progress — themed to whichever world you've engaged with most.
+const WORLD_SUGGESTIONS = {
+  faith: ["Ask if their family has a saint or tradition they celebrate every year.", "Ask what role faith plays in a typical Colombian Christmas.", "Ask what 'Dios te bendiga' means to them personally."],
+  family: ["Ask where in Colombia their grandparents are from.", "Ask what a typical Sunday looks like with their family.", "Ask if they have a favourite family nickname (apodo)."],
+  food: ["Ask them to teach you how to make arepas properly.", "Ask what dish reminds them most of home.", "Ask how food differs between the coast and the Andes in Colombia."],
+  culture: ["Ask them to teach you one slang word only their region uses.", "Ask what 'parce' really means to them, beyond the dictionary.", "Ask about a local celebration from their hometown you've never heard of."],
+  career: ["Ask what work culture is like in Colombia compared to here.", "Ask if they have any advice for learning a trade like plumbing."],
+};
+// Fallback while you're still early — seeded by today's date so it stays fresh.
+const GENERAL_SUGGESTIONS = [
+  "Ask them what song instantly makes them think of home.",
+  "Ask them to send you a voice note saying something in their accent.",
+  "Ask what they miss most about Colombia.",
+  "Ask them about Feria de las Flores — Medellín's flower festival.",
+  "Ask if they've ever danced cumbia, and get them to show you a step.",
+  "Ask what 'tinto' means and why Colombians drink so much of it.",
+  "Ask them to correct your pronunciation on one word, out loud.",
+  "Ask what their hometown is famous for.",
+];
+
 const BASE_CURRICULUM = {
   faith: [
     { id: 'faith-1', name: 'Words of Faith', es: 'Palabras de fe', xp: 20, cards: [
@@ -256,6 +283,7 @@ const Keyframes = () => (<style>{`
   @keyframes cardRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes badgeBurst { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 55% { transform: scale(1.15); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
   @keyframes recPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes typingDot { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
   .anim-glow { animation: glowPulse 1.4s ease-in-out 2; } .anim-count { animation: countUp 0.7s ease-out; } .anim-card-rise { animation: cardRise 0.4s ease-out both; } .anim-badge { animation: badgeBurst 0.6s cubic-bezier(.34,1.56,.64,1) both; } .anim-rec { animation: recPulse 1s ease-in-out infinite; }
 `}</style>);
 
@@ -268,7 +296,6 @@ const PageArc = ({ base = CREAM, circle = LIME }) => (
 
 const SegWord = ({ segs, color }) => (<span>{segs.map((s, i) => <span key={i} style={{ color: s.c ? color : INK, fontWeight: s.c ? 900 : 700 }}>{s.t}</span>)}</span>);
 
-// Small, secondary record + playback control — separate from the pronunciation-check mic above it.
 const RecordPlayback = ({ recording, recordedUrl, onToggle, onPlay }) => (
   <div className="flex gap-2 mt-2">
     <button onClick={onToggle} className="flex-1 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: recording ? '#FFEDE5' : '#F1F8E4', color: recording ? CORAL : LIME_DK }}>
@@ -301,15 +328,18 @@ export default function Camino() {
   const [bdRevealed, setBdRevealed] = useState(false);
   const [bdCheckRevealed, setBdCheckRevealed] = useState(false);
 
+  // "Meet someone" — now a real chat thread: history fades, translations hide behind a tap, a typing pause before replies.
   const [activeDialogue, setActiveDialogue] = useState(null);
   const [dlgIdx, setDlgIdx] = useState(0);
   const [dlgRevealed, setDlgRevealed] = useState(false);
+  const [revealedEn, setRevealedEn] = useState({});
+  const [themTyping, setThemTyping] = useState(false);
+  const threadEndRef = useRef(null);
 
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState('');
   const [matchResult, setMatchResult] = useState(null);
 
-  // Real voice recording (separate from the speech-recognition pronunciation check above).
   const [recording, setRecording] = useState(false);
   const [recordedUrl, setRecordedUrl] = useState(null);
   const mediaRecorderRef = useRef(null);
@@ -326,7 +356,6 @@ export default function Camino() {
   const [noteInput, setNoteInput] = useState('');
   const [noteListening, setNoteListening] = useState(false);
 
-  // Saved Links — a lightweight, reliable media-library: icon picked from the URL itself, no fetching, nothing to break.
   const [links, setLinks] = useState(saved.links || []);
   const [linkInput, setLinkInput] = useState('');
 
@@ -342,15 +371,27 @@ export default function Camino() {
   const [stats, setStats] = useState(saved.stats || { xp: 0, streak: 0, completedLessons: [], level: 1 });
   const [fndExpanded, setFndExpanded] = useState(false);
 
-  // Save everything that matters whenever it changes — works on the real deployed site.
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons })); } catch (e) {}
   }, [stats, certificates, notes, links, convoDate, convoName, customLessons]);
+
+  useEffect(() => { threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [dlgIdx, dlgRevealed, themTyping]);
 
   const levelFromXp = (xp) => Math.floor(xp / 100) + 1;
   const xpInLevel = (xp) => xp % 100;
   const daysUntil = (iso) => { if (!iso) return null; return Math.round((new Date(iso).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000); };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  // Picks the hero suggestion: a real Colombian date beats everything; otherwise it's themed to your most-progressed world; otherwise a date-seeded general idea.
+  const getHeroSuggestion = () => {
+    const now = new Date();
+    const dateKey = `${now.getMonth() + 1}-${now.getDate()}`;
+    if (COLOMBIA_DATES[dateKey]) return COLOMBIA_DATES[dateKey];
+    const dayIdx = Math.floor(now.getTime() / 86400000);
+    const progress = WORLDS.map(w => ({ id: w.id, count: (BASE_CURRICULUM[w.id] || []).filter(l => stats.completedLessons.includes(l.id)).length })).filter(w => w.count > 0).sort((a, b) => b.count - a.count);
+    if (progress.length > 0) { const pool = WORLD_SUGGESTIONS[progress[0].id] || GENERAL_SUGGESTIONS; return pool[dayIdx % pool.length]; }
+    return GENERAL_SUGGESTIONS[dayIdx % GENERAL_SUGGESTIONS.length];
+  };
 
   const speak = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-CO'; u.rate = 0.8; window.speechSynthesis.speak(u); } };
   const speakEn = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = 0.95; window.speechSynthesis.speak(u); } };
@@ -375,28 +416,18 @@ export default function Camino() {
   };
   const skipVoice = (cb) => { setHeard('(skipped — typed/attempted silently)'); setMatchResult('good'); cb && cb(true); };
 
-  // Real audio capture + playback for "Record yourself".
   const toggleRecord = async () => {
     if (recording) { mediaRecorderRef.current && mediaRecorderRef.current.stop(); setRecording(false); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Let the browser pick its own format (Safari/iOS differs from Chrome) — read it back via mr.mimeType so the saved clip is labelled correctly and can actually play back.
       const mr = new MediaRecorder(stream);
       chunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
-        setRecordedUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach(t => t.stop());
-      };
+      mr.onstop = () => { const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' }); setRecordedUrl(URL.createObjectURL(blob)); stream.getTracks().forEach(t => t.stop()); };
       mediaRecorderRef.current = mr; mr.start(); setRecording(true);
     } catch (e) { setHeard('Microphone permission needed to record'); }
   };
-  const playRecording = () => {
-    if (!recordedUrl) return;
-    const audio = new Audio(recordedUrl);
-    audio.play().catch(() => setHeard('Couldn\'t play that recording — try recording again'));
-  };
+  const playRecording = () => { if (!recordedUrl) return; const audio = new Audio(recordedUrl); audio.play().catch(() => setHeard('Couldn\'t play that recording — try recording again')); };
   const resetRecording = () => { setRecording(false); setRecordedUrl(null); };
 
   const listenForCreate = () => {
@@ -421,7 +452,6 @@ export default function Camino() {
   const saveNote = () => { if (!noteInput.trim()) return; setNotes(prev => [{ id: Date.now(), text: noteInput.trim(), date: new Date().toLocaleDateString() }, ...prev]); setNoteInput(''); };
   const deleteNote = (id) => setNotes(prev => prev.filter(n => n.id !== id));
 
-  // Pure string-matching on the URL — no fetching, so it can never fail or load slowly.
   const getLinkMeta = (url) => {
     const u = url.toLowerCase();
     if (u.includes('youtube.com') || u.includes('youtu.be') || u.includes('vimeo.com')) return { Icon: Film, type: 'Video', bg: '#FFE0E6', color: '#E8607A' };
@@ -464,7 +494,11 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
   const startCustomLesson = (lesson) => { setActiveWorld({ name: lesson.name, es: lesson.es, emoji: lesson.emoji, g1: LIME, g2: LIME_DK, desc: lesson.summary, custom: true }); setActiveLesson(lesson); setCardIndex(0); setPhase('see'); setSessionXp(0); setHeard(''); setMatchResult(null); resetRecording(); setNextSuggestion({ label: 'Watch real Spanish', tab: 'watch' }); setView('lesson'); setTimeout(() => speak(lesson.cards[0].es), 500); };
   const startBridge = (b) => { setActiveBridge(b); setBridgeStage('teach'); setQuizIdx(0); setQuizRevealed(false); setBdRevealed(false); setBdCheckRevealed(false); setSessionXp(0); setView('bridge'); };
   const startExam = () => { setExamIdx(0); setExamScore(0); setExamAnswered(null); setHeard(''); setMatchResult(null); setView('exam'); };
-  const startDialogue = (d) => { setActiveDialogue(d); setDlgIdx(0); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); setView('dialogue'); setTimeout(() => speak(d.steps[0].es), 400); };
+  const startDialogue = (d) => {
+    setActiveDialogue(d); setDlgIdx(0); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); setRevealedEn({});
+    setView('dialogue');
+    if (d.steps[0].from === 'them') { setThemTyping(true); setTimeout(() => { setThemTyping(false); speak(d.steps[0].es); }, 700); }
+  };
 
   const advance = () => {
     setHeard(''); setMatchResult(null); resetRecording();
@@ -490,8 +524,10 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
   const advanceDialogue = () => {
     const d = activeDialogue;
-    if (dlgIdx < d.steps.length - 1) { const ni = dlgIdx + 1; setDlgIdx(ni); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); if (d.steps[ni].from === 'them') setTimeout(() => speak(d.steps[ni].es), 350); }
-    else {
+    if (dlgIdx < d.steps.length - 1) {
+      const ni = dlgIdx + 1; setDlgIdx(ni); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording();
+      if (d.steps[ni].from === 'them') { setThemTyping(true); setTimeout(() => { setThemTyping(false); speak(d.steps[ni].es); }, 700); }
+    } else {
       const gain = 25; const newXp = stats.xp + gain;
       setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
       setSessionXp(gain); setActiveWorld({ name: d.title, g1: '#FFB36B', g2: '#F2823C', emoji: d.emoji }); setActiveLesson({ cards: d.steps.filter(s=>s.from==='you').map(s=>({es:s.es,en:s.en,hook:'',note:''})) });
@@ -557,8 +593,14 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 <div className="absolute top-4 right-4"><Camilo mood={isReturning ? 'happy' : 'wave'} size={56} /></div>
                 <div className="relative p-6 flex flex-col justify-end" style={{ minHeight: 200 }}>
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] mb-1.5 text-white/80">{isReturning ? `Level ${stats.level} · ${stats.streak} day streak` : 'Welcome, Luke'}</div>
-                  <div className="font-black text-white text-4xl leading-[0.95] tracking-tight mb-2">{isReturning ? 'Keep going.' : "Let's begin."}</div>
-                  <div className="text-sm font-medium text-white/90 mb-4">{isReturning ? pick([camiSay.greetBack, 'Un paso a la vez.']) : "I'm Camilo — your guide 👋"}</div>
+                  <div className="font-black text-white text-4xl leading-[0.95] tracking-tight mb-3">{isReturning ? 'Keep going.' : "Let's begin."}</div>
+                  <div className="rounded-xl px-3.5 py-3 mb-4 flex items-start gap-2.5" style={{ background: 'rgba(255,255,255,0.18)' }}>
+                    <span className="text-base flex-shrink-0">💬</span>
+                    <div>
+                      <div className="text-white/70 text-[10px] font-black uppercase tracking-wide mb-0.5">Try this with {convoName || 'your friend'}</div>
+                      <div className="text-white text-sm font-medium leading-snug">{getHeroSuggestion()}</div>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2"><div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.3)' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpInLevel(stats.xp)}%`, background: '#fff' }} /></div><span className="text-white/90 text-[11px] font-bold whitespace-nowrap">{100 - xpInLevel(stats.xp)} XP to Lv {stats.level + 1}</span></div>
                 </div>
               </div>
@@ -615,7 +657,6 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 <div className="space-y-2">{notes.map(n => (<div key={n.id} className="rounded-xl p-3 flex items-start gap-2" style={{ background: '#FFF8EC', border: '1px solid #F3E6CC' }}><div className="flex-1"><div className="text-sm" style={{ color: INK }}>{n.text}</div><div className="text-[10px]" style={{ color: '#B5AB9A' }}>{n.date}</div></div><button onClick={() => deleteNote(n.id)}><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button></div>))}</div>
               )}
 
-              {/* Saved Links — your watch-later list, icon picked from the URL itself */}
               <div className="flex items-center gap-2 mb-3 mt-6"><Link2 size={15} style={{ color: '#8A8478' }} /><h2 className="text-base font-black" style={{ color: INK }}>Saved links</h2></div>
               <div className="rounded-2xl p-4 mb-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
                 <div className="flex gap-2">
@@ -743,32 +784,66 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
   if (view === 'dialogue') {
     const d = activeDialogue; const step = d.steps[dlgIdx];
+    const threadUpTo = step.from === 'them' ? dlgIdx : dlgIdx - 1;
+    const threadSteps = d.steps.slice(0, Math.max(threadUpTo + 1, 0));
+
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
-        <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
-          <div className="px-6 pt-3 flex items-center gap-2"><Users size={15} style={{ color: CORAL }} /><span className="text-[10px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
-          <div className="flex-1 flex flex-col items-center justify-center px-6">
-            {step.from === 'them' ? (
-              <div key={dlgIdx} className="w-full rounded-3xl p-6 anim-card-rise" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                <div className="text-[10px] font-bold uppercase mb-2" style={{ color: '#A89F8E' }}>They say...</div>
-                <div className="flex items-center gap-3 mb-2"><div className="text-2xl font-black" style={{ color: LIME_DK }}>{step.es}</div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
-                <div className="text-xs" style={{ color: '#B5AB9A' }}>{step.en}</div>
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh' }}>
+          <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
+          <div className="px-6 pt-3 pb-1 flex items-center gap-2 flex-shrink-0"><Users size={15} style={{ color: CORAL }} /><span className="text-[10px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
+
+          <div className="flex-1 overflow-y-auto px-6 pt-3">
+            {threadSteps.map((s, idx) => {
+              const isThem = s.from === 'them';
+              const faded = idx < dlgIdx;
+              const revealed = !!revealedEn[idx];
+              return (
+                <div key={idx} className={`flex ${isThem ? 'justify-start' : 'justify-end'} mb-3`} style={{ opacity: faded ? 0.42 : 1, transition: 'opacity 0.35s' }}>
+                  {isThem && <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 self-end mb-1" style={{ background: '#F3ECE0' }}>🇨🇴</div>}
+                  <div style={{ maxWidth: '78%' }}>
+                    <div className="rounded-2xl px-4 py-2.5" style={{ background: isThem ? '#fff' : LIME_DK, border: isThem ? '1px solid #EFE6D8' : 'none', borderBottomLeftRadius: isThem ? 6 : 18, borderBottomRightRadius: isThem ? 18 : 6 }}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold" style={{ color: isThem ? INK : '#fff', fontSize: 16 }}>{s.es}</span>
+                        <button onClick={() => speak(s.es)} className="flex-shrink-0"><Volume2 size={13} style={{ color: isThem ? LIME_DK : '#fff', opacity: 0.85 }} /></button>
+                      </div>
+                    </div>
+                    <button onClick={() => setRevealedEn(prev => ({ ...prev, [idx]: !prev[idx] }))} className="text-[10px] font-medium mt-1 block" style={{ color: '#B5AB9A', textAlign: isThem ? 'left' : 'right', width: '100%' }}>
+                      {revealed ? s.en : '🇬🇧 Show translation'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {themTyping && (
+              <div className="flex justify-start mb-3">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0" style={{ background: '#F3ECE0' }}>🇨🇴</div>
+                <div className="rounded-2xl px-4 py-3.5" style={{ background: '#fff', border: '1px solid #EFE6D8', borderBottomLeftRadius: 6 }}>
+                  <div className="flex gap-1">{[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: '#C2B8A8', animation: `typingDot 1.2s ${i*0.2}s infinite` }} />)}</div>
+                </div>
               </div>
-            ) : (
-              <div key={dlgIdx} className="w-full rounded-3xl p-6 anim-card-rise" style={{ background: '#fff', border: `1.5px solid ${CORAL}60` }}>
+            )}
+            <div ref={threadEndRef} style={{ height: 1 }} />
+          </div>
+
+          {step.from === 'you' && (
+            <div className="px-6 pt-2 flex-shrink-0">
+              <div className="rounded-3xl p-5" style={{ background: '#fff', border: `1.5px solid ${CORAL}60` }}>
                 <div className="text-[10px] font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
                 {!dlgRevealed ? (
                   <button onClick={() => setDlgRevealed(true)} className="text-sm font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>
-                ) : (<><div className="flex items-center gap-3 mb-2"><div className="text-xl font-black" style={{ color: INK }}>{step.es}</div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div><div className="text-xs mb-4" style={{ color: '#B5AB9A' }}>{step.en}</div>
+                ) : (<>
+                  <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}>{step.es}</div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
+                  <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-[11px] font-medium mb-4 block" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
                   <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it out loud'}</button>
                   {heard && <div className="text-xs text-center mb-2" style={{ color: matchResult === 'good' ? LIME_DK : '#A89F8E' }}>{heard}</div>}
                   <RecordPlayback recording={recording} recordedUrl={recordedUrl} onToggle={toggleRecord} onPlay={playRecording} />
                 </>)}
               </div>
-            )}
-          </div>
-          <div className="px-6 pb-8 space-y-2 mt-3">
+            </div>
+          )}
+
+          <div className="px-6 pb-8 pt-3 space-y-2 flex-shrink-0">
             {(step.from === 'them' || dlgRevealed) && <button onClick={advanceDialogue} className="w-full py-4 rounded-2xl font-black text-lg text-white" style={{ background: INK }}>{step.from === 'them' ? 'Continue →' : 'I said it ✓'}</button>}
             {step.from === 'you' && dlgRevealed && <SkipVoice onSkip={() => skipVoice()} />}
           </div>
