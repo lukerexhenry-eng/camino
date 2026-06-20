@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
-import { Flame, Star, Volume2, Mic, Check, Lock, ChevronRight, Trophy, ArrowLeft, Sparkles, Wand2, Loader2, Zap, Play, Link2, Film, ArrowRight, GraduationCap, Globe, BookOpen, X, Award, BarChart3, StickyNote, Trash2, Users } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Flame, Star, Volume2, Mic, Check, Lock, ChevronRight, Trophy, ArrowLeft, Sparkles, Wand2, Loader2, Zap, Play, Link2, Film, ArrowRight, GraduationCap, Globe, BookOpen, X, Award, BarChart3, StickyNote, Trash2, Users, Square, ChevronDown, Headphones, FileText } from 'lucide-react';
+
+// Persistence — saves/loads from the browser's storage. Only works on a real deployed site, not in this preview.
+const STORAGE_KEY = 'camino_progress_v1';
+const loadSaved = () => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; } };
 
 const LIME = '#9FCB40';
 const LIME_DK = '#6FA01E';
@@ -82,7 +86,6 @@ const FOUNDATIONS = [
     { es: 'Comí arepa', en: 'I ate arepa', hook: 'comí = ate', note: '' }, { es: '¿Qué hiciste ayer?', en: 'What did you do yesterday?', hook: 'a great question to ask', note: '' }] },
 ];
 
-// BRIDGE — teach -> examples (colour-coded) -> breakdown (Language-Transfer-style pause & reason) -> quiz
 const BRIDGE = [
   { id: 'bridge-tion', rule: '-tion → -ción', xp: 30, big: 'You know ~2,500 words',
     teach: 'Almost every English word ending in -tion becomes -ción. Same meaning. Just say "see-ON" at the end.',
@@ -252,7 +255,8 @@ const Keyframes = () => (<style>{`
   @keyframes countUp { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }
   @keyframes cardRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes badgeBurst { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 55% { transform: scale(1.15); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
-  .anim-glow { animation: glowPulse 1.4s ease-in-out 2; } .anim-count { animation: countUp 0.7s ease-out; } .anim-card-rise { animation: cardRise 0.4s ease-out both; } .anim-badge { animation: badgeBurst 0.6s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes recPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .anim-glow { animation: glowPulse 1.4s ease-in-out 2; } .anim-count { animation: countUp 0.7s ease-out; } .anim-card-rise { animation: cardRise 0.4s ease-out both; } .anim-badge { animation: badgeBurst 0.6s cubic-bezier(.34,1.56,.64,1) both; } .anim-rec { animation: recPulse 1s ease-in-out infinite; }
 `}</style>);
 
 const PageArc = ({ base = CREAM, circle = LIME }) => (
@@ -264,7 +268,23 @@ const PageArc = ({ base = CREAM, circle = LIME }) => (
 
 const SegWord = ({ segs, color }) => (<span>{segs.map((s, i) => <span key={i} style={{ color: s.c ? color : INK, fontWeight: s.c ? 900 : 700 }}>{s.t}</span>)}</span>);
 
+// Small, secondary record + playback control — separate from the pronunciation-check mic above it.
+const RecordPlayback = ({ recording, recordedUrl, onToggle, onPlay }) => (
+  <div className="flex gap-2 mt-2">
+    <button onClick={onToggle} className="flex-1 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: recording ? '#FFEDE5' : '#F1F8E4', color: recording ? CORAL : LIME_DK }}>
+      {recording ? <Square size={14} fill={CORAL} className="anim-rec" /> : <Mic size={14} />}
+      {recording ? 'Stop recording' : 'Record yourself'}
+    </button>
+    {recordedUrl && (
+      <button onClick={onPlay} className="flex-1 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: '#fff', border: '1px solid #EFE6D8', color: INK }}>
+        <Play size={14} /> Play it back
+      </button>
+    )}
+  </div>
+);
+
 export default function Camino() {
+  const saved = loadSaved();
   const [tab, setTab] = useState('learn');
   const [view, setView] = useState('tabs');
   const [activeWorld, setActiveWorld] = useState(null);
@@ -289,27 +309,43 @@ export default function Camino() {
   const [heard, setHeard] = useState('');
   const [matchResult, setMatchResult] = useState(null);
 
-  const [customLessons, setCustomLessons] = useState([]);
+  // Real voice recording (separate from the speech-recognition pronunciation check above).
+  const [recording, setRecording] = useState(false);
+  const [recordedUrl, setRecordedUrl] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  const [customLessons, setCustomLessons] = useState(saved.customLessons || []);
   const [createInput, setCreateInput] = useState('');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [createListening, setCreateListening] = useState(false);
   const [correctedFrom, setCorrectedFrom] = useState(null);
 
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(saved.notes || []);
   const [noteInput, setNoteInput] = useState('');
   const [noteListening, setNoteListening] = useState(false);
 
-  const [convoDate, setConvoDate] = useState(null);
-  const [convoName, setConvoName] = useState('');
+  // Saved Links — a lightweight, reliable media-library: icon picked from the URL itself, no fetching, nothing to break.
+  const [links, setLinks] = useState(saved.links || []);
+  const [linkInput, setLinkInput] = useState('');
+
+  const [convoDate, setConvoDate] = useState(saved.convoDate || null);
+  const [convoName, setConvoName] = useState(saved.convoName || '');
   const [showConvoModal, setShowConvoModal] = useState(false);
   const [examIdx, setExamIdx] = useState(0);
   const [examScore, setExamScore] = useState(0);
   const [examAnswered, setExamAnswered] = useState(null);
   const [examPassed, setExamPassed] = useState(false);
-  const [certificates, setCertificates] = useState([]);
+  const [certificates, setCertificates] = useState(saved.certificates || []);
 
-  const [stats, setStats] = useState({ xp: 0, streak: 0, completedLessons: [], level: 1 });
+  const [stats, setStats] = useState(saved.stats || { xp: 0, streak: 0, completedLessons: [], level: 1 });
+  const [fndExpanded, setFndExpanded] = useState(false);
+
+  // Save everything that matters whenever it changes — works on the real deployed site.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons })); } catch (e) {}
+  }, [stats, certificates, notes, links, convoDate, convoName, customLessons]);
 
   const levelFromXp = (xp) => Math.floor(xp / 100) + 1;
   const xpInLevel = (xp) => xp % 100;
@@ -317,7 +353,6 @@ export default function Camino() {
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
   const speak = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-CO'; u.rate = 0.8; window.speechSynthesis.speak(u); } };
-  // English narration for explanatory text — optional convenience, separate voice from the Spanish practice audio.
   const speakEn = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = 0.95; window.speechSynthesis.speak(u); } };
 
   const lev = (a, b) => { const m = [...Array(a.length + 1)].map((_, i) => [i, ...Array(b.length).fill(0)]); for (let j = 0; j <= b.length; j++) m[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i-1][j]+1, m[i][j-1]+1, m[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return m[a.length][b.length]; };
@@ -339,6 +374,21 @@ export default function Camino() {
     rec.start();
   };
   const skipVoice = (cb) => { setHeard('(skipped — typed/attempted silently)'); setMatchResult('good'); cb && cb(true); };
+
+  // Real audio capture + playback for "Record yourself".
+  const toggleRecord = async () => {
+    if (recording) { mediaRecorderRef.current && mediaRecorderRef.current.stop(); setRecording(false); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => chunksRef.current.push(e.data);
+      mr.onstop = () => { const blob = new Blob(chunksRef.current, { type: 'audio/webm' }); setRecordedUrl(URL.createObjectURL(blob)); stream.getTracks().forEach(t => t.stop()); };
+      mediaRecorderRef.current = mr; mr.start(); setRecording(true);
+    } catch (e) { setHeard('Microphone permission needed to record'); }
+  };
+  const playRecording = () => { if (recordedUrl) new Audio(recordedUrl).play(); };
+  const resetRecording = () => { setRecording(false); setRecordedUrl(null); };
 
   const listenForCreate = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -362,6 +412,25 @@ export default function Camino() {
   const saveNote = () => { if (!noteInput.trim()) return; setNotes(prev => [{ id: Date.now(), text: noteInput.trim(), date: new Date().toLocaleDateString() }, ...prev]); setNoteInput(''); };
   const deleteNote = (id) => setNotes(prev => prev.filter(n => n.id !== id));
 
+  // Pure string-matching on the URL — no fetching, so it can never fail or load slowly.
+  const getLinkMeta = (url) => {
+    const u = url.toLowerCase();
+    if (u.includes('youtube.com') || u.includes('youtu.be') || u.includes('vimeo.com')) return { Icon: Film, type: 'Video', bg: '#FFE0E6', color: '#E8607A' };
+    if (u.includes('spotify.com') || u.includes('soundcloud.com') || u.includes('podcast')) return { Icon: Headphones, type: 'Podcast', bg: '#EDE3FF', color: '#9B6BE0' };
+    if (u.includes('.pdf')) return { Icon: FileText, type: 'Document', bg: '#FFE9D6', color: '#F2823C' };
+    return { Icon: Link2, type: 'Article', bg: '#F1F8E4', color: LIME_DK };
+  };
+  const addLink = () => {
+    const url = linkInput.trim(); if (!url) return;
+    const full = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    let label = full.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    label = label.length > 40 ? label.slice(0, 40) + '…' : label;
+    setLinks(prev => [{ id: Date.now(), url: full, label, done: false, date: new Date().toLocaleDateString() }, ...prev]);
+    setLinkInput('');
+  };
+  const toggleLinkDone = (id) => setLinks(prev => prev.map(l => l.id === id ? { ...l, done: !l.done } : l));
+  const deleteLink = (id) => setLinks(prev => prev.filter(l => l.id !== id));
+
   const createLesson = async () => {
     if (!createInput.trim() || creating) return;
     setCreating(true); setCreateError(''); setCorrectedFrom(null);
@@ -382,14 +451,14 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     setCreating(false);
   };
 
-  const startLesson = (world, lesson) => { setActiveWorld(world); setActiveLesson(lesson); setCardIndex(0); setPhase('see'); setSessionXp(0); setHeard(''); setMatchResult(null); setNextSuggestion({ label: 'Try a Bridge pattern', tab: 'learn' }); setView('lesson'); setTimeout(() => speak(lesson.cards[0].es), 500); };
-  const startCustomLesson = (lesson) => { setActiveWorld({ name: lesson.name, es: lesson.es, emoji: lesson.emoji, g1: LIME, g2: LIME_DK, desc: lesson.summary, custom: true }); setActiveLesson(lesson); setCardIndex(0); setPhase('see'); setSessionXp(0); setHeard(''); setMatchResult(null); setNextSuggestion({ label: 'Watch real Spanish', tab: 'watch' }); setView('lesson'); setTimeout(() => speak(lesson.cards[0].es), 500); };
+  const startLesson = (world, lesson) => { setActiveWorld(world); setActiveLesson(lesson); setCardIndex(0); setPhase('see'); setSessionXp(0); setHeard(''); setMatchResult(null); resetRecording(); setNextSuggestion({ label: 'Try a Bridge pattern', tab: 'learn' }); setView('lesson'); setTimeout(() => speak(lesson.cards[0].es), 500); };
+  const startCustomLesson = (lesson) => { setActiveWorld({ name: lesson.name, es: lesson.es, emoji: lesson.emoji, g1: LIME, g2: LIME_DK, desc: lesson.summary, custom: true }); setActiveLesson(lesson); setCardIndex(0); setPhase('see'); setSessionXp(0); setHeard(''); setMatchResult(null); resetRecording(); setNextSuggestion({ label: 'Watch real Spanish', tab: 'watch' }); setView('lesson'); setTimeout(() => speak(lesson.cards[0].es), 500); };
   const startBridge = (b) => { setActiveBridge(b); setBridgeStage('teach'); setQuizIdx(0); setQuizRevealed(false); setBdRevealed(false); setBdCheckRevealed(false); setSessionXp(0); setView('bridge'); };
   const startExam = () => { setExamIdx(0); setExamScore(0); setExamAnswered(null); setHeard(''); setMatchResult(null); setView('exam'); };
-  const startDialogue = (d) => { setActiveDialogue(d); setDlgIdx(0); setDlgRevealed(false); setHeard(''); setMatchResult(null); setView('dialogue'); setTimeout(() => speak(d.steps[0].es), 400); };
+  const startDialogue = (d) => { setActiveDialogue(d); setDlgIdx(0); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); setView('dialogue'); setTimeout(() => speak(d.steps[0].es), 400); };
 
   const advance = () => {
-    setHeard(''); setMatchResult(null);
+    setHeard(''); setMatchResult(null); resetRecording();
     if (phase === 'see') { setPhase('listen'); speak(activeLesson.cards[cardIndex].es); return; }
     if (phase === 'listen') { setPhase('say'); return; }
     if (cardIndex < activeLesson.cards.length - 1) { const ni = cardIndex + 1; setCardIndex(ni); setPhase('see'); setTimeout(() => speak(activeLesson.cards[ni].es), 400); }
@@ -412,7 +481,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
   const advanceDialogue = () => {
     const d = activeDialogue;
-    if (dlgIdx < d.steps.length - 1) { const ni = dlgIdx + 1; setDlgIdx(ni); setDlgRevealed(false); setHeard(''); setMatchResult(null); if (d.steps[ni].from === 'them') setTimeout(() => speak(d.steps[ni].es), 350); }
+    if (dlgIdx < d.steps.length - 1) { const ni = dlgIdx + 1; setDlgIdx(ni); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); if (d.steps[ni].from === 'them') setTimeout(() => speak(d.steps[ni].es), 350); }
     else {
       const gain = 25; const newXp = stats.xp + gain;
       setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
@@ -536,6 +605,28 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               {notes.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Saved notes show up here.</p></div>) : (
                 <div className="space-y-2">{notes.map(n => (<div key={n.id} className="rounded-xl p-3 flex items-start gap-2" style={{ background: '#FFF8EC', border: '1px solid #F3E6CC' }}><div className="flex-1"><div className="text-sm" style={{ color: INK }}>{n.text}</div><div className="text-[10px]" style={{ color: '#B5AB9A' }}>{n.date}</div></div><button onClick={() => deleteNote(n.id)}><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button></div>))}</div>
               )}
+
+              {/* Saved Links — your watch-later list, icon picked from the URL itself */}
+              <div className="flex items-center gap-2 mb-3 mt-6"><Link2 size={15} style={{ color: '#8A8478' }} /><h2 className="text-base font-black" style={{ color: INK }}>Saved links</h2></div>
+              <div className="rounded-2xl p-4 mb-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
+                <div className="flex gap-2">
+                  <input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste a video, article, or podcast link..." className="flex-1 rounded-xl p-3 text-sm outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} />
+                  <button onClick={addLink} disabled={!linkInput.trim()} className="px-4 rounded-xl font-bold text-sm text-white disabled:opacity-40" style={{ background: INK }}>Save</button>
+                </div>
+              </div>
+              {links.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Save anything to watch, read, or listen to later.</p></div>) : (
+                <div className="space-y-2">{links.map(l => { const { Icon, type, bg, color } = getLinkMeta(l.url); return (
+                  <div key={l.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8', opacity: l.done ? 0.55 : 1 }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg }}><Icon size={16} style={{ color }} /></div>
+                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate" style={{ color: INK, textDecoration: l.done ? 'line-through' : 'none' }}>{l.label}</div>
+                      <div className="text-[10px] font-bold" style={{ color }}>{type}</div>
+                    </a>
+                    <button onClick={() => toggleLinkDone(l.id)} className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: l.done ? LIME : '#F3ECE0' }}><Check size={13} style={{ color: l.done ? '#fff' : '#C2B8A8' }} /></button>
+                    <button onClick={() => deleteLink(l.id)} className="flex-shrink-0"><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button>
+                  </div>
+                ); })}</div>
+              )}
             </div>
           )}
 
@@ -557,13 +648,33 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
             <div className="px-5">
               <div className="flex items-center gap-2 mb-1"><BookOpen size={18} style={{ color: LIME_DK }} /><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>Foundations</h2><span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F1F8E4', color: LIME_DK }}>Your base</span></div>
               <p className="text-xs mb-4" style={{ color: '#8A8478' }}>Work through these in order — your core. Everything else builds on it.</p>
-              <div className="space-y-2.5 mb-7">{FOUNDATIONS.map((unit, idx) => { const done = stats.completedLessons.includes(unit.id); const locked = idx > 0 && !stats.completedLessons.includes(FOUNDATIONS[idx - 1].id); return (
-                <button key={unit.id} disabled={locked} onClick={() => startLesson({ name: unit.name, es: unit.es, emoji: '📘', g1: LIME, g2: LIME_DK, desc: unit.desc, custom: true }, unit)} className={`w-full rounded-2xl p-4 flex items-center gap-3 text-left transition-all ${locked ? 'opacity-40' : 'active:scale-[0.98]'}`} style={{ background: '#fff', border: `1px solid ${done ? LIME : '#EFE6D8'}` }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0" style={{ background: done ? LIME : locked ? '#F3ECE0' : '#F1F8E4', color: done ? '#fff' : locked ? '#C2B8A8' : LIME_DK }}>{done ? <Check size={20} /> : locked ? <Lock size={15} /> : unit.n}</div>
-                  <div className="flex-1"><div className="font-bold text-sm" style={{ color: INK }}>{unit.name}</div><div className="text-[11px]" style={{ color: '#8A8478' }}>{unit.desc}</div></div>
-                  <div className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FFF3D6', color: '#C08A1E' }}><Star size={10} fill="#C08A1E" /> {unit.xp}</div>
-                </button>
-              ); })}</div>
+              {(() => {
+                const nextIdx = FOUNDATIONS.findIndex(u => !stats.completedLessons.includes(u.id));
+                const cutoff = nextIdx === -1 ? FOUNDATIONS.length : nextIdx + 1;
+                const hiddenCount = Math.max(0, FOUNDATIONS.length - cutoff);
+                return (
+                  <div className="space-y-2.5 mb-7">
+                    {FOUNDATIONS.map((unit, idx) => {
+                      if (idx >= cutoff && !fndExpanded) return null;
+                      const done = stats.completedLessons.includes(unit.id);
+                      const locked = idx > 0 && !stats.completedLessons.includes(FOUNDATIONS[idx - 1].id);
+                      return (
+                        <button key={unit.id} disabled={locked} onClick={() => startLesson({ name: unit.name, es: unit.es, emoji: '📘', g1: LIME, g2: LIME_DK, desc: unit.desc, custom: true }, unit)} className={`w-full rounded-2xl p-4 flex items-center gap-3 text-left transition-all ${locked ? 'opacity-40' : 'active:scale-[0.98]'}`} style={{ background: '#fff', border: `1px solid ${done ? LIME : '#EFE6D8'}` }}>
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0" style={{ background: done ? LIME : locked ? '#F3ECE0' : '#F1F8E4', color: done ? '#fff' : locked ? '#C2B8A8' : LIME_DK }}>{done ? <Check size={20} /> : locked ? <Lock size={15} /> : unit.n}</div>
+                          <div className="flex-1"><div className="font-bold text-sm" style={{ color: INK }}>{unit.name}</div><div className="text-[11px]" style={{ color: '#8A8478' }}>{unit.desc}</div></div>
+                          <div className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FFF3D6', color: '#C08A1E' }}><Star size={10} fill="#C08A1E" /> {unit.xp}</div>
+                        </button>
+                      );
+                    })}
+                    {hiddenCount > 0 && (
+                      <button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-sm font-bold" style={{ background: '#F3ECE0', color: '#8A8478' }}>
+                        <ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                        {fndExpanded ? 'Show less' : `${hiddenCount} more units locked — tap to preview`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-2 mb-1"><Globe size={18} style={{ color: '#8A8478' }} /><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>Themed worlds</h2><span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F3ECE0', color: '#8A8478' }}>Add-ons</span></div>
               <p className="text-xs mb-5" style={{ color: '#8A8478' }}>Extra vocabulary rooted in your life. Dip in anytime.</p>
               <div className="grid grid-cols-2 gap-3">{WORLDS.map((world) => { const lessons = BASE_CURRICULUM[world.id] || []; const done = lessons.filter(l => stats.completedLessons.includes(l.id)).length; return (
@@ -643,11 +754,12 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 ) : (<><div className="flex items-center gap-3 mb-2"><div className="text-xl font-black" style={{ color: INK }}>{step.es}</div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div><div className="text-xs mb-4" style={{ color: '#B5AB9A' }}>{step.en}</div>
                   <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it out loud'}</button>
                   {heard && <div className="text-xs text-center mb-2" style={{ color: matchResult === 'good' ? LIME_DK : '#A89F8E' }}>{heard}</div>}
+                  <RecordPlayback recording={recording} recordedUrl={recordedUrl} onToggle={toggleRecord} onPlay={playRecording} />
                 </>)}
               </div>
             )}
           </div>
-          <div className="px-6 pb-8 space-y-2">
+          <div className="px-6 pb-8 space-y-2 mt-3">
             {(step.from === 'them' || dlgRevealed) && <button onClick={advanceDialogue} className="w-full py-4 rounded-2xl font-black text-lg text-white" style={{ background: INK }}>{step.from === 'them' ? 'Continue →' : 'I said it ✓'}</button>}
             {step.from === 'you' && dlgRevealed && <SkipVoice onSkip={() => skipVoice()} />}
           </div>
@@ -830,6 +942,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 <button onClick={() => listen(card.es)} disabled={listening} className="w-full rounded-2xl py-4 flex items-center justify-center gap-3 font-bold text-white transition-all active:scale-[0.98]" style={{ background: listening ? '#C2B8A8' : `linear-gradient(135deg, ${activeWorld.g1}, ${activeWorld.g2})` }}><Mic size={22} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Tap & say it out loud'}</button>
                 {!heard && <SkipVoice onSkip={() => skipVoice()} />}
                 {heard && <div className="rounded-2xl p-3 text-center anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}><div className="font-bold text-sm" style={{ color: INK }}>{heard}</div>{matchResult === 'good' && <div className="text-xs font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)} +5 XP</div>}{matchResult === 'close' && <div className="text-xs font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}{matchResult === 'try' && <div className="text-xs font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}</div>}
+                <RecordPlayback recording={recording} recordedUrl={recordedUrl} onToggle={toggleRecord} onPlay={playRecording} />
               </div>
             )}
           </div>
