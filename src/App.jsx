@@ -380,14 +380,23 @@ export default function Camino() {
     if (recording) { mediaRecorderRef.current && mediaRecorderRef.current.stop(); setRecording(false); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Let the browser pick its own format (Safari/iOS differs from Chrome) — read it back via mr.mimeType so the saved clip is labelled correctly and can actually play back.
       const mr = new MediaRecorder(stream);
       chunksRef.current = [];
-      mr.ondataavailable = (e) => chunksRef.current.push(e.data);
-      mr.onstop = () => { const blob = new Blob(chunksRef.current, { type: 'audio/webm' }); setRecordedUrl(URL.createObjectURL(blob)); stream.getTracks().forEach(t => t.stop()); };
+      mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
+        setRecordedUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(t => t.stop());
+      };
       mediaRecorderRef.current = mr; mr.start(); setRecording(true);
     } catch (e) { setHeard('Microphone permission needed to record'); }
   };
-  const playRecording = () => { if (recordedUrl) new Audio(recordedUrl).play(); };
+  const playRecording = () => {
+    if (!recordedUrl) return;
+    const audio = new Audio(recordedUrl);
+    audio.play().catch(() => setHeard('Couldn\'t play that recording — try recording again'));
+  };
   const resetRecording = () => { setRecording(false); setRecordedUrl(null); };
 
   const listenForCreate = () => {
