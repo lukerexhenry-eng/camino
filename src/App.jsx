@@ -194,6 +194,9 @@ const GENERAL_SUGGESTIONS = [
   "Ask what their hometown is famous for.",
 ];
 
+// Spaced repetition — box 1→5, each box doubling the gap before you see it again. Evidence-backed: longer spacing improves delayed retention.
+const REVIEW_INTERVALS = [1, 1, 2, 4, 8, 16];
+
 const BASE_CURRICULUM = {
   faith: [
     { id: 'faith-1', name: 'Words of Faith', es: 'Palabras de fe', xp: 20, cards: [
@@ -371,9 +374,15 @@ export default function Camino() {
   const [stats, setStats] = useState(saved.stats || { xp: 0, streak: 0, completedLessons: [], level: 1 });
   const [fndExpanded, setFndExpanded] = useState(false);
 
+  // Repaso — spaced, interleaved vocabulary review, fed automatically by everything you complete.
+  const [reviewItems, setReviewItems] = useState(saved.reviewItems || []);
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIdx, setReviewIdx] = useState(0);
+  const [reviewRevealed, setReviewRevealed] = useState(false);
+
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons })); } catch (e) {}
-  }, [stats, certificates, notes, links, convoDate, convoName, customLessons]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems })); } catch (e) {}
+  }, [stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems]);
 
   useEffect(() => { threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [dlgIdx, dlgRevealed, themTyping]);
 
@@ -391,6 +400,23 @@ export default function Camino() {
     const progress = WORLDS.map(w => ({ id: w.id, count: (BASE_CURRICULUM[w.id] || []).filter(l => stats.completedLessons.includes(l.id)).length })).filter(w => w.count > 0).sort((a, b) => b.count - a.count);
     if (progress.length > 0) { const pool = WORLD_SUGGESTIONS[progress[0].id] || GENERAL_SUGGESTIONS; return pool[dayIdx % pool.length]; }
     return GENERAL_SUGGESTIONS[dayIdx % GENERAL_SUGGESTIONS.length];
+  };
+
+  // Adds newly-learned words to the review pool (deduped) — called every time a lesson, Bridge rule, or dialogue completes.
+  const addToReviewPool = (cards) => {
+    if (!cards || !cards.length) return;
+    setReviewItems(prev => {
+      const existing = new Set(prev.map(it => it.es));
+      const today = new Date().toISOString().slice(0, 10);
+      const additions = cards.filter(c => c.es && !existing.has(c.es)).map(c => ({ es: c.es, en: c.en, box: 1, nextDue: today }));
+      return additions.length ? [...prev, ...additions] : prev;
+    });
+  };
+  const startReview = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const due = reviewItems.filter(it => it.nextDue <= today);
+    const shuffled = [...due].sort(() => Math.random() - 0.5).map(it => ({ ...it, direction: Math.random() < 0.5 ? 'recognize' : 'produce' }));
+    setReviewQueue(shuffled); setReviewIdx(0); setReviewRevealed(false); setView('review');
   };
 
   const speak = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-CO'; u.rate = 0.8; window.speechSynthesis.speak(u); } };
@@ -510,6 +536,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
       const gain = (already ? Math.floor(activeLesson.xp / 2) : activeLesson.xp) + sessionXp;
       const newXp = stats.xp + gain;
       setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1), completedLessons: already ? p.completedLessons : [...p.completedLessons, activeLesson.id] }));
+      addToReviewPool(activeLesson.cards);
       setSessionXp(gain); setView('complete');
     }
   };
@@ -519,6 +546,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     const gain = already ? Math.floor(activeBridge.xp / 2) : activeBridge.xp; const newXp = stats.xp + gain;
     setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1), completedLessons: already ? p.completedLessons : [...p.completedLessons, activeBridge.id] }));
     setSessionXp(gain); setActiveWorld({ name: activeBridge.rule, g1: LIME, g2: LIME_DK, emoji: '🌉' }); setActiveLesson({ cards: [...activeBridge.examples.map(e=>({es:e.es,en:e.en,hook:'',note:''})), ...activeBridge.quiz] });
+    addToReviewPool([...activeBridge.examples.map(e=>({es:e.es,en:e.en})), ...activeBridge.quiz]);
     setNextSuggestion({ label: 'Practice "Meet someone"', tab: 'dialogue' }); setView('complete');
   };
 
@@ -531,6 +559,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
       const gain = 25; const newXp = stats.xp + gain;
       setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
       setSessionXp(gain); setActiveWorld({ name: d.title, g1: '#FFB36B', g2: '#F2823C', emoji: d.emoji }); setActiveLesson({ cards: d.steps.filter(s=>s.from==='you').map(s=>({es:s.es,en:s.en,hook:'',note:''})) });
+      addToReviewPool(d.steps.filter(s=>s.from==='you').map(s=>({es:s.es,en:s.en})));
       setNextSuggestion({ label: 'See your progress', tab: 'progress' }); setView('complete');
     }
   };
@@ -606,6 +635,14 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               </div>
 
               <ConvoCard />
+
+              {(() => { const dueCount = reviewItems.filter(it => it.nextDue <= new Date().toISOString().slice(0, 10)).length; return dueCount > 0 && (
+                <button onClick={startReview} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#F1F8E4' }}>🔁</div>
+                  <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Repaso — {dueCount} word{dueCount === 1 ? '' : 's'} ready</div><div className="text-xs" style={{ color: '#8A8478' }}>Spaced review — the single best way to make it stick.</div></div>
+                  <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
+                </button>
+              ); })()}
 
               <button onClick={() => startDialogue(DIALOGUES[0])} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#fff', border: `1.5px solid ${CORAL}50` }}>
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#FFEDE5' }}>👋</div>
@@ -777,6 +814,53 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
           ))}</div>
           {certificates.length > 0 && (<div className="px-6 mt-6"><h2 className="text-sm font-black mb-2" style={{ color: INK }}>Certificates</h2>{certificates.map(c => (<div key={c.id} className="rounded-xl p-3 flex items-center gap-2 mb-2" style={{ background: '#F1F8E4' }}><Award size={18} style={{ color: LIME_DK }} /><span className="text-sm font-bold" style={{ color: INK }}>{c.id}</span></div>))}</div>)}
           <div className="px-6 mt-6"><Camilo mood="proud" size={70} /><p className="text-sm mt-2" style={{ color: '#8A8478' }}>Every bar here moves because you showed up. That's the whole game.</p></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'review') {
+    const item = reviewQueue[reviewIdx];
+    if (!item) { setView('tabs'); return null; }
+    const submitReview = (knew) => {
+      setReviewItems(prev => prev.map(it => {
+        if (it.es !== item.es) return it;
+        const newBox = knew ? Math.min(5, it.box + 1) : 1;
+        const days = REVIEW_INTERVALS[newBox];
+        return { ...it, box: newBox, nextDue: new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) };
+      }));
+      if (reviewIdx < reviewQueue.length - 1) { setReviewIdx(reviewIdx + 1); setReviewRevealed(false); }
+      else {
+        const gain = reviewQueue.length * 2; const newXp = stats.xp + gain;
+        setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
+        setSessionXp(gain); setActiveWorld({ name: 'Repaso', g1: LIME, g2: LIME_DK, emoji: '🔁' }); setActiveLesson({ cards: reviewQueue.map(q => ({ es: q.es, en: q.en, hook: '', note: '' })) });
+        setNextSuggestion(null); setView('complete');
+      }
+    };
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(reviewIdx / reviewQueue.length) * 100}%`, background: LIME_DK }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{reviewIdx + 1}/{reviewQueue.length}</span></div>
+          <div className="px-6 pt-3"><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · SPACED REVIEW</div></div>
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div key={reviewIdx} className="w-full rounded-[2rem] p-8 min-h-[260px] flex flex-col items-center justify-center anim-card-rise" style={{ background: '#fff', border: '1px solid #EFE6D8', boxShadow: '0 12px 40px -16px rgba(0,0,0,0.12)' }}>
+              {item.direction === 'recognize' ? (<>
+                <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>What does this mean?</div>
+                <div className="flex items-center gap-3"><div className="text-3xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>
+                {reviewRevealed && <div className="text-xl font-bold mt-4" style={{ color: INK }}>{item.en}</div>}
+              </>) : (<>
+                <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How do you say this?</div>
+                <div className="text-2xl font-bold text-center" style={{ color: INK }}>{item.en}</div>
+                {reviewRevealed && (<div className="flex items-center gap-3 mt-4"><div className="text-2xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>)}
+              </>)}
+              {!reviewRevealed && <button onClick={() => setReviewRevealed(true)} className="mt-5 text-sm font-bold underline" style={{ color: '#A89F8E' }}>Tap to reveal</button>}
+            </div>
+          </div>
+          <div className="px-6 pb-8 pt-3">
+            {reviewRevealed ? (
+              <div className="flex gap-3"><button onClick={() => submitReview(false)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: '#C2B8A8' }}>Forgot</button><button onClick={() => submitReview(true)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>✓ Knew it</button></div>
+            ) : <div style={{ height: 60 }} />}
+          </div>
         </div>
       </div>
     );
