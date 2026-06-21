@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer } from 'recharts';
 import { Flame, Star, Volume2, Mic, Check, Lock, ChevronRight, Trophy, ArrowLeft, Sparkles, Wand2, Loader2, Zap, Play, Link2, Film, ArrowRight, GraduationCap, Globe, BookOpen, X, Award, BarChart3, StickyNote, Trash2, Users, Square, ChevronDown, Headphones, FileText } from 'lucide-react';
 
 const STORAGE_KEY = 'camino_progress_v1';
@@ -166,7 +167,6 @@ const VIDEO_TIERS = [
   { minLevel: 6, tier: 'Intermediate', emoji: '🌳', desc: 'Real conversations. Your stretch.', url: 'https://app.dreaming.com/spanish/browse?level=intermediate' },
 ];
 
-// Real, fixed Colombian dates — when today matches, this overrides everything else with something genuinely timely.
 const COLOMBIA_DATES = {
   '1-1': "It's New Year's Day — ask what traditions their family follows (many Colombians eat grapes at midnight for luck!).",
   '7-20': "It's Colombian Independence Day 🇨🇴 — ask how their family celebrates it.",
@@ -174,7 +174,6 @@ const COLOMBIA_DATES = {
   '12-7': "It's Día de las Velitas — ask if their family still lights candles tonight.",
   '12-25': "It's Navidad — ask what Christmas looks like in their hometown.",
 };
-// Tied to your actual progress — themed to whichever world you've engaged with most.
 const WORLD_SUGGESTIONS = {
   faith: ["Ask if their family has a saint or tradition they celebrate every year.", "Ask what role faith plays in a typical Colombian Christmas.", "Ask what 'Dios te bendiga' means to them personally."],
   family: ["Ask where in Colombia their grandparents are from.", "Ask what a typical Sunday looks like with their family.", "Ask if they have a favourite family nickname (apodo)."],
@@ -182,7 +181,6 @@ const WORLD_SUGGESTIONS = {
   culture: ["Ask them to teach you one slang word only their region uses.", "Ask what 'parce' really means to them, beyond the dictionary.", "Ask about a local celebration from their hometown you've never heard of."],
   career: ["Ask what work culture is like in Colombia compared to here.", "Ask if they have any advice for learning a trade like plumbing."],
 };
-// Fallback while you're still early — seeded by today's date so it stays fresh.
 const GENERAL_SUGGESTIONS = [
   "Ask them what song instantly makes them think of home.",
   "Ask them to send you a voice note saying something in their accent.",
@@ -194,7 +192,6 @@ const GENERAL_SUGGESTIONS = [
   "Ask what their hometown is famous for.",
 ];
 
-// Spaced repetition — box 1→5, each box doubling the gap before you see it again. Evidence-backed: longer spacing improves delayed retention.
 const REVIEW_INTERVALS = [1, 1, 2, 4, 8, 16];
 
 const BASE_CURRICULUM = {
@@ -331,7 +328,6 @@ export default function Camino() {
   const [bdRevealed, setBdRevealed] = useState(false);
   const [bdCheckRevealed, setBdCheckRevealed] = useState(false);
 
-  // "Meet someone" — now a real chat thread: history fades, translations hide behind a tap, a typing pause before replies.
   const [activeDialogue, setActiveDialogue] = useState(null);
   const [dlgIdx, setDlgIdx] = useState(0);
   const [dlgRevealed, setDlgRevealed] = useState(false);
@@ -374,15 +370,26 @@ export default function Camino() {
   const [stats, setStats] = useState(saved.stats || { xp: 0, streak: 0, completedLessons: [], level: 1 });
   const [fndExpanded, setFndExpanded] = useState(false);
 
-  // Repaso — spaced, interleaved vocabulary review, fed automatically by everything you complete.
+  // Repaso — spaced, interleaved review with three faces: flashcard, memory match, quick tap.
   const [reviewItems, setReviewItems] = useState(saved.reviewItems || []);
+  const [reviewMode, setReviewMode] = useState('flashcard');
   const [reviewQueue, setReviewQueue] = useState([]);
   const [reviewIdx, setReviewIdx] = useState(0);
   const [reviewRevealed, setReviewRevealed] = useState(false);
+  const [tapQueue, setTapQueue] = useState([]);
+  const [tapAnswered, setTapAnswered] = useState(null);
+  const [matchItems, setMatchItems] = useState([]);
+  const [matchCards, setMatchCards] = useState([]);
+  const [matchFirst, setMatchFirst] = useState(null);
+  const [matchBusy, setMatchBusy] = useState(false);
+
+  // Real input-hours tracking — self-logged from Watch & Absorb, feeds the progress chart.
+  const [inputMinutes, setInputMinutes] = useState(saved.inputMinutes || 0);
+  const [inputLog, setInputLog] = useState(saved.inputLog || []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems })); } catch (e) {}
-  }, [stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog })); } catch (e) {}
+  }, [stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog]);
 
   useEffect(() => { threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [dlgIdx, dlgRevealed, themTyping]);
 
@@ -390,34 +397,6 @@ export default function Camino() {
   const xpInLevel = (xp) => xp % 100;
   const daysUntil = (iso) => { if (!iso) return null; return Math.round((new Date(iso).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000); };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
-  // Picks the hero suggestion: a real Colombian date beats everything; otherwise it's themed to your most-progressed world; otherwise a date-seeded general idea.
-  const getHeroSuggestion = () => {
-    const now = new Date();
-    const dateKey = `${now.getMonth() + 1}-${now.getDate()}`;
-    if (COLOMBIA_DATES[dateKey]) return COLOMBIA_DATES[dateKey];
-    const dayIdx = Math.floor(now.getTime() / 86400000);
-    const progress = WORLDS.map(w => ({ id: w.id, count: (BASE_CURRICULUM[w.id] || []).filter(l => stats.completedLessons.includes(l.id)).length })).filter(w => w.count > 0).sort((a, b) => b.count - a.count);
-    if (progress.length > 0) { const pool = WORLD_SUGGESTIONS[progress[0].id] || GENERAL_SUGGESTIONS; return pool[dayIdx % pool.length]; }
-    return GENERAL_SUGGESTIONS[dayIdx % GENERAL_SUGGESTIONS.length];
-  };
-
-  // Adds newly-learned words to the review pool (deduped) — called every time a lesson, Bridge rule, or dialogue completes.
-  const addToReviewPool = (cards) => {
-    if (!cards || !cards.length) return;
-    setReviewItems(prev => {
-      const existing = new Set(prev.map(it => it.es));
-      const today = new Date().toISOString().slice(0, 10);
-      const additions = cards.filter(c => c.es && !existing.has(c.es)).map(c => ({ es: c.es, en: c.en, box: 1, nextDue: today }));
-      return additions.length ? [...prev, ...additions] : prev;
-    });
-  };
-  const startReview = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const due = reviewItems.filter(it => it.nextDue <= today);
-    const shuffled = [...due].sort(() => Math.random() - 0.5).map(it => ({ ...it, direction: Math.random() < 0.5 ? 'recognize' : 'produce' }));
-    setReviewQueue(shuffled); setReviewIdx(0); setReviewRevealed(false); setView('review');
-  };
 
   const speak = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-CO'; u.rate = 0.8; window.speechSynthesis.speak(u); } };
   const speakEn = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = 0.95; window.speechSynthesis.speak(u); } };
@@ -564,6 +543,112 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     }
   };
 
+  // ===== Repaso core =====
+  const addToReviewPool = (cards) => {
+    if (!cards || !cards.length) return;
+    setReviewItems(prev => {
+      const existing = new Set(prev.map(it => it.es));
+      const today = new Date().toISOString().slice(0, 10);
+      const additions = cards.filter(c => c.es && !existing.has(c.es)).map(c => ({ es: c.es, en: c.en, box: 1, nextDue: today }));
+      return additions.length ? [...prev, ...additions] : prev;
+    });
+  };
+  const updateReviewBox = (es, knew) => {
+    setReviewItems(prev => prev.map(it => {
+      if (it.es !== es) return it;
+      const newBox = knew ? Math.min(5, it.box + 1) : 1;
+      const days = REVIEW_INTERVALS[newBox];
+      return { ...it, box: newBox, nextDue: new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) };
+    }));
+  };
+  const finishReviewSession = (cardsReviewed) => {
+    const gain = cardsReviewed.length * 2; const newXp = stats.xp + gain;
+    setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
+    setSessionXp(gain); setActiveWorld({ name: 'Repaso', g1: LIME, g2: LIME_DK, emoji: '🔁' }); setActiveLesson({ cards: cardsReviewed.map(c => ({ es: c.es, en: c.en, hook: '', note: '' })) });
+    setNextSuggestion(null); setView('complete');
+  };
+  const buildTapQueue = (due, pool) => due.map(it => {
+    const direction = Math.random() < 0.5 ? 'recognize' : 'produce';
+    const correctText = direction === 'recognize' ? it.en : it.es;
+    const decoyPool = pool.filter(p => p.es !== it.es);
+    const decoys = [...decoyPool].sort(() => Math.random() - 0.5).slice(0, 3).map(p => direction === 'recognize' ? p.en : p.es);
+    const options = [...new Set([correctText, ...decoys])].sort(() => Math.random() - 0.5);
+    return { ...it, direction, correctText, options };
+  });
+  const startReview = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const due = reviewItems.filter(it => it.nextDue <= today);
+    if (due.length === 0) return;
+    const pool = reviewItems;
+    let mode = 'flashcard';
+    const roll = Math.random();
+    if (due.length >= 3 && pool.length >= 4) { if (roll < 0.34) mode = 'match'; else if (roll < 0.67) mode = 'tap'; }
+    setReviewMode(mode);
+    if (mode === 'flashcard') {
+      const shuffled = [...due].sort(() => Math.random() - 0.5).map(it => ({ ...it, direction: Math.random() < 0.5 ? 'recognize' : 'produce' }));
+      setReviewQueue(shuffled); setReviewIdx(0); setReviewRevealed(false);
+    } else if (mode === 'tap') {
+      setTapQueue(buildTapQueue(due, pool)); setReviewIdx(0); setTapAnswered(null);
+    } else {
+      const chosen = [...due].sort(() => Math.random() - 0.5).slice(0, Math.min(6, due.length));
+      let cards = [];
+      chosen.forEach(it => { cards.push({ key: it.es + '-es', type: 'es', text: it.es, itemEs: it.es, solved: false, flipped: false }); cards.push({ key: it.es + '-en', type: 'en', text: it.en, itemEs: it.es, solved: false, flipped: false }); });
+      setMatchItems(chosen); setMatchCards(cards.sort(() => Math.random() - 0.5)); setMatchFirst(null); setMatchBusy(false);
+    }
+    setView('review');
+  };
+  const submitReview = (knew) => {
+    const item = reviewQueue[reviewIdx];
+    updateReviewBox(item.es, knew);
+    if (reviewIdx < reviewQueue.length - 1) { setReviewIdx(reviewIdx + 1); setReviewRevealed(false); }
+    else finishReviewSession(reviewQueue);
+  };
+  const flipMatchCard = (idx) => {
+    if (matchBusy) return;
+    const card = matchCards[idx];
+    if (!card || card.solved || card.flipped) return;
+    if (matchFirst === null) { setMatchCards(prev => prev.map((c, i) => i === idx ? { ...c, flipped: true } : c)); setMatchFirst(idx); return; }
+    const firstCard = matchCards[matchFirst];
+    const isMatch = firstCard.itemEs === card.itemEs && idx !== matchFirst;
+    setMatchCards(prev => prev.map((c, i) => i === idx ? { ...c, flipped: true } : c));
+    setMatchBusy(true);
+    setTimeout(() => {
+      if (isMatch) {
+        updateReviewBox(card.itemEs, true);
+        setMatchCards(prev => {
+          const updated = prev.map((c, i) => (i === idx || i === matchFirst) ? { ...c, solved: true } : c);
+          if (updated.every(c => c.solved)) setTimeout(() => finishReviewSession(matchItems), 350);
+          return updated;
+        });
+      } else { setMatchCards(prev => prev.map((c, i) => (i === idx || i === matchFirst) ? { ...c, flipped: false } : c)); }
+      setMatchFirst(null); setMatchBusy(false);
+    }, isMatch ? 450 : 850);
+  };
+
+  // ===== Watch & Absorb input logging =====
+  const logInput = (minutes) => {
+    const today = new Date().toISOString().slice(0, 10);
+    setInputLog(prev => { const idx = prev.findIndex(e => e.date === today); if (idx >= 0) { const copy = [...prev]; copy[idx] = { ...copy[idx], minutes: copy[idx].minutes + minutes }; return copy; } return [...prev, { date: today, minutes }]; });
+    setInputMinutes(prev => prev + minutes);
+    const gain = Math.round(minutes / 2); const newXp = stats.xp + gain;
+    setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
+  };
+  const buildHoursSeries = () => {
+    const sorted = [...inputLog].sort((a, b) => a.date.localeCompare(b.date));
+    let cum = 0;
+    return sorted.map(e => { cum += e.minutes / 60; return { date: e.date, hours: Math.round(cum * 10) / 10 }; });
+  };
+
+  const getHeroSuggestion = () => {
+    const now = new Date();
+    const dateKey = `${now.getMonth() + 1}-${now.getDate()}`;
+    if (COLOMBIA_DATES[dateKey]) return COLOMBIA_DATES[dateKey];
+    const dayIdx = Math.floor(now.getTime() / 86400000);
+    const progress = WORLDS.map(w => ({ id: w.id, count: (BASE_CURRICULUM[w.id] || []).filter(l => stats.completedLessons.includes(l.id)).length })).filter(w => w.count > 0).sort((a, b) => b.count - a.count);
+    if (progress.length > 0) { const pool = WORLD_SUGGESTIONS[progress[0].id] || GENERAL_SUGGESTIONS; return pool[dayIdx % pool.length]; }
+    return GENERAL_SUGGESTIONS[dayIdx % GENERAL_SUGGESTIONS.length];
+  };
+
   const TopBar = () => (
     <div className="flex justify-between items-center px-6 pt-7 pb-3 relative">
       <div className="text-3xl font-black tracking-tighter leading-none" style={{ color: LIME_DK, letterSpacing: '-0.04em' }}>CAMINO</div>
@@ -625,10 +710,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                   <div className="font-black text-white text-4xl leading-[0.95] tracking-tight mb-3">{isReturning ? 'Keep going.' : "Let's begin."}</div>
                   <div className="rounded-xl px-3.5 py-3 mb-4 flex items-start gap-2.5" style={{ background: 'rgba(255,255,255,0.18)' }}>
                     <span className="text-base flex-shrink-0">💬</span>
-                    <div>
-                      <div className="text-white/70 text-[10px] font-black uppercase tracking-wide mb-0.5">Try this with {convoName || 'your friend'}</div>
-                      <div className="text-white text-sm font-medium leading-snug">{getHeroSuggestion()}</div>
-                    </div>
+                    <div><div className="text-white/70 text-[10px] font-black uppercase tracking-wide mb-0.5">Try this with {convoName || 'your friend'}</div><div className="text-white text-sm font-medium leading-snug">{getHeroSuggestion()}</div></div>
                   </div>
                   <div className="flex items-center gap-2"><div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.3)' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpInLevel(stats.xp)}%`, background: '#fff' }} /></div><span className="text-white/90 text-[11px] font-bold whitespace-nowrap">{100 - xpInLevel(stats.xp)} XP to Lv {stats.level + 1}</span></div>
                 </div>
@@ -696,19 +778,13 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
               <div className="flex items-center gap-2 mb-3 mt-6"><Link2 size={15} style={{ color: '#8A8478' }} /><h2 className="text-base font-black" style={{ color: INK }}>Saved links</h2></div>
               <div className="rounded-2xl p-4 mb-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                <div className="flex gap-2">
-                  <input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste a video, article, or podcast link..." className="flex-1 rounded-xl p-3 text-sm outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} />
-                  <button onClick={addLink} disabled={!linkInput.trim()} className="px-4 rounded-xl font-bold text-sm text-white disabled:opacity-40" style={{ background: INK }}>Save</button>
-                </div>
+                <div className="flex gap-2"><input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste a video, article, or podcast link..." className="flex-1 rounded-xl p-3 text-sm outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={addLink} disabled={!linkInput.trim()} className="px-4 rounded-xl font-bold text-sm text-white disabled:opacity-40" style={{ background: INK }}>Save</button></div>
               </div>
               {links.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Save anything to watch, read, or listen to later.</p></div>) : (
                 <div className="space-y-2">{links.map(l => { const { Icon, type, bg, color } = getLinkMeta(l.url); return (
                   <div key={l.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8', opacity: l.done ? 0.55 : 1 }}>
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg }}><Icon size={16} style={{ color }} /></div>
-                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color: INK, textDecoration: l.done ? 'line-through' : 'none' }}>{l.label}</div>
-                      <div className="text-[10px] font-bold" style={{ color }}>{type}</div>
-                    </a>
+                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0"><div className="text-sm font-medium truncate" style={{ color: INK, textDecoration: l.done ? 'line-through' : 'none' }}>{l.label}</div><div className="text-[10px] font-bold" style={{ color }}>{type}</div></a>
                     <button onClick={() => toggleLinkDone(l.id)} className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: l.done ? LIME : '#F3ECE0' }}><Check size={13} style={{ color: l.done ? '#fff' : '#C2B8A8' }} /></button>
                     <button onClick={() => deleteLink(l.id)} className="flex-shrink-0"><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button>
                   </div>
@@ -727,6 +803,10 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                   {unlocked ? <Play size={18} className="text-white" /> : <Lock size={16} className="text-white/70" />}
                 </div>
               ); })}</div>
+              <div className="mt-5 rounded-2xl p-4" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
+                <div className="flex items-center justify-between mb-3"><div className="font-black text-sm" style={{ color: INK }}>Log what you watched</div><div key={inputMinutes} className="text-xs font-bold anim-glow" style={{ color: LIME_DK }}>{(inputMinutes / 60).toFixed(1)}h total</div></div>
+                <div className="grid grid-cols-4 gap-2">{[5, 10, 15, 30].map(m => (<button key={m} onClick={() => logInput(m)} className="rounded-xl py-2.5 font-bold text-sm active:scale-[0.96] transition-all" style={{ background: '#F1F8E4', color: LIME_DK }}>{m}m</button>))}</div>
+              </div>
               <div className="mt-4 rounded-2xl p-4" style={{ background: SKY, border: '1px solid #DCEBF8' }}><p className="text-xs leading-relaxed" style={{ color: '#4A6E8A' }}>💡 <span className="font-bold">Why this works:</span> watching input you mostly understand is how your brain absorbs Spanish naturally. Even 10 minutes counts.</p></div>
             </div>
           )}
@@ -753,12 +833,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                         </button>
                       );
                     })}
-                    {hiddenCount > 0 && (
-                      <button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-sm font-bold" style={{ background: '#F3ECE0', color: '#8A8478' }}>
-                        <ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                        {fndExpanded ? 'Show less' : `${hiddenCount} more units locked — tap to preview`}
-                      </button>
-                    )}
+                    {hiddenCount > 0 && (<button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-sm font-bold" style={{ background: '#F3ECE0', color: '#8A8478' }}><ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />{fndExpanded ? 'Show less' : `${hiddenCount} more units locked — tap to preview`}</button>)}
                   </div>
                 );
               })()}
@@ -800,6 +875,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
       { label: 'The Bridge', val: `${bridgeDone}/${BRIDGE.length}`, pct: bridgeDone/BRIDGE.length*100, color: '#4FA3E0' },
       { label: 'Themed worlds touched', val: `${worldsTouched}/${WORLDS.length}`, pct: worldsTouched/WORLDS.length*100, color: '#9B6BE0' },
     ];
+    const hoursSeries = buildHoursSeries();
     return (
       <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto pb-10">
@@ -812,6 +888,27 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
           <div className="px-6 mt-6 space-y-4">{rows.map(r => (
             <div key={r.label}><div className="flex justify-between text-sm mb-1"><span className="font-bold" style={{ color: INK }}>{r.label}</span><span className="font-bold" style={{ color: r.color }}>{r.val}</span></div><div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${r.pct}%`, background: r.color }} /></div></div>
           ))}</div>
+
+          <div className="px-6 mt-6">
+            <h2 className="text-sm font-black mb-2" style={{ color: INK }}>Input hours over time</h2>
+            {hoursSeries.length < 2 ? (
+              <div className="rounded-2xl p-4 text-center" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Log a few Watch & Absorb sessions to see your trend build here.</p></div>
+            ) : (<>
+              <div className="rounded-2xl p-2" style={{ background: '#fff', border: '1px solid #EFE6D8', height: 190 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={hoursSeries} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#A89F8E' }} tickFormatter={(d) => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 9, fill: '#A89F8E' }} />
+                    <ReferenceLine y={150} stroke="#C2B8A8" strokeDasharray="4 4" label={{ value: '~150h', position: 'insideTopRight', fontSize: 9, fill: '#A89F8E' }} />
+                    <ReferenceLine y={300} stroke="#C2B8A8" strokeDasharray="4 4" label={{ value: '~300h', position: 'insideTopRight', fontSize: 9, fill: '#A89F8E' }} />
+                    <Line type="monotone" dataKey="hours" stroke={LIME_DK} strokeWidth={2.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[10px] mt-2" style={{ color: '#B5AB9A' }}>Dashed lines are general comprehensible-input benchmarks from research — not a prediction about you specifically.</p>
+            </>)}
+          </div>
+
           {certificates.length > 0 && (<div className="px-6 mt-6"><h2 className="text-sm font-black mb-2" style={{ color: INK }}>Certificates</h2>{certificates.map(c => (<div key={c.id} className="rounded-xl p-3 flex items-center gap-2 mb-2" style={{ background: '#F1F8E4' }}><Award size={18} style={{ color: LIME_DK }} /><span className="text-sm font-bold" style={{ color: INK }}>{c.id}</span></div>))}</div>)}
           <div className="px-6 mt-6"><Camilo mood="proud" size={70} /><p className="text-sm mt-2" style={{ color: '#8A8478' }}>Every bar here moves because you showed up. That's the whole game.</p></div>
         </div>
@@ -820,47 +917,69 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
   }
 
   if (view === 'review') {
-    const item = reviewQueue[reviewIdx];
-    if (!item) { setView('tabs'); return null; }
-    const submitReview = (knew) => {
-      setReviewItems(prev => prev.map(it => {
-        if (it.es !== item.es) return it;
-        const newBox = knew ? Math.min(5, it.box + 1) : 1;
-        const days = REVIEW_INTERVALS[newBox];
-        return { ...it, box: newBox, nextDue: new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) };
-      }));
-      if (reviewIdx < reviewQueue.length - 1) { setReviewIdx(reviewIdx + 1); setReviewRevealed(false); }
-      else {
-        const gain = reviewQueue.length * 2; const newXp = stats.xp + gain;
-        setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
-        setSessionXp(gain); setActiveWorld({ name: 'Repaso', g1: LIME, g2: LIME_DK, emoji: '🔁' }); setActiveLesson({ cards: reviewQueue.map(q => ({ es: q.es, en: q.en, hook: '', note: '' })) });
-        setNextSuggestion(null); setView('complete');
-      }
-    };
+    const totalCount = reviewMode === 'match' ? matchItems.length : reviewMode === 'tap' ? tapQueue.length : reviewQueue.length;
+    const currentCount = reviewMode === 'match' ? Math.floor(matchCards.filter(c => c.solved).length / 2) : reviewIdx;
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+        <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(reviewIdx / reviewQueue.length) * 100}%`, background: LIME_DK }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{reviewIdx + 1}/{reviewQueue.length}</span></div>
-          <div className="px-6 pt-3"><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · SPACED REVIEW</div></div>
-          <div className="flex-1 flex flex-col items-center justify-center px-6">
-            <div key={reviewIdx} className="w-full rounded-[2rem] p-8 min-h-[260px] flex flex-col items-center justify-center anim-card-rise" style={{ background: '#fff', border: '1px solid #EFE6D8', boxShadow: '0 12px 40px -16px rgba(0,0,0,0.12)' }}>
-              {item.direction === 'recognize' ? (<>
-                <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>What does this mean?</div>
-                <div className="flex items-center gap-3"><div className="text-3xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>
-                {reviewRevealed && <div className="text-xl font-bold mt-4" style={{ color: INK }}>{item.en}</div>}
-              </>) : (<>
-                <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How do you say this?</div>
-                <div className="text-2xl font-bold text-center" style={{ color: INK }}>{item.en}</div>
-                {reviewRevealed && (<div className="flex items-center gap-3 mt-4"><div className="text-2xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>)}
-              </>)}
-              {!reviewRevealed && <button onClick={() => setReviewRevealed(true)} className="mt-5 text-sm font-bold underline" style={{ color: '#A89F8E' }}>Tap to reveal</button>}
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${totalCount ? (currentCount / totalCount) * 100 : 0}%`, background: LIME_DK }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{currentCount}/{totalCount}</span></div>
+          <div className="px-6 pt-3"><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · {reviewMode === 'match' ? 'MEMORY MATCH' : reviewMode === 'tap' ? 'QUICK TAP' : 'SPACED REVIEW'}</div></div>
+
+          {reviewMode === 'flashcard' && (() => {
+            const item = reviewQueue[reviewIdx];
+            if (!item) return null;
+            return (
+              <>
+                <div className="flex-1 flex flex-col items-center justify-center px-6">
+                  <div key={reviewIdx} className="w-full rounded-[2rem] p-8 min-h-[260px] flex flex-col items-center justify-center anim-card-rise" style={{ background: '#fff', border: '1px solid #EFE6D8', boxShadow: '0 12px 40px -16px rgba(0,0,0,0.12)' }}>
+                    {item.direction === 'recognize' ? (<>
+                      <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>What does this mean?</div>
+                      <div className="flex items-center gap-3"><div className="text-3xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>
+                      {reviewRevealed && <div className="text-xl font-bold mt-4" style={{ color: INK }}>{item.en}</div>}
+                    </>) : (<>
+                      <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How do you say this?</div>
+                      <div className="text-2xl font-bold text-center" style={{ color: INK }}>{item.en}</div>
+                      {reviewRevealed && (<div className="flex items-center gap-3 mt-4"><div className="text-2xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>)}
+                    </>)}
+                    {!reviewRevealed && <button onClick={() => setReviewRevealed(true)} className="mt-5 text-sm font-bold underline" style={{ color: '#A89F8E' }}>Tap to reveal</button>}
+                  </div>
+                </div>
+                <div className="px-6 pb-8 pt-3">{reviewRevealed ? (<div className="flex gap-3"><button onClick={() => submitReview(false)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: '#C2B8A8' }}>Forgot</button><button onClick={() => submitReview(true)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>✓ Knew it</button></div>) : <div style={{ height: 60 }} />}</div>
+              </>
+            );
+          })()}
+
+          {reviewMode === 'tap' && (() => {
+            const item = tapQueue[reviewIdx];
+            if (!item) return null;
+            const onTapOption = (opt) => {
+              const correct = opt === item.correctText;
+              updateReviewBox(item.es, correct);
+              setTapAnswered({ opt, correct });
+              setTimeout(() => { setTapAnswered(null); if (reviewIdx < tapQueue.length - 1) setReviewIdx(reviewIdx + 1); else finishReviewSession(tapQueue); }, 900);
+            };
+            return (
+              <div className="flex-1 flex flex-col items-center justify-center px-6">
+                <div className="text-sm font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>{item.direction === 'recognize' ? 'What does this mean?' : 'How do you say this?'}</div>
+                <div className="flex items-center gap-3 mb-6"><div className="text-3xl font-black" style={{ color: item.direction === 'recognize' ? LIME_DK : INK }}>{item.direction === 'recognize' ? item.es : item.en}</div>{item.direction === 'recognize' && <button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button>}</div>
+                <div className="w-full space-y-2.5">{item.options.map(opt => { const isAnswered = !!tapAnswered; const isThis = tapAnswered && tapAnswered.opt === opt; const isCorrectOpt = opt === item.correctText; return (
+                  <button key={opt} onClick={() => !isAnswered && onTapOption(opt)} disabled={isAnswered} className="w-full rounded-2xl p-4 font-bold text-left transition-all" style={{ background: isAnswered ? (isCorrectOpt ? '#F1F8E4' : isThis ? '#FFEDE9' : '#fff') : '#fff', border: `1.5px solid ${isAnswered && isCorrectOpt ? LIME : isAnswered && isThis ? CORAL : '#EFE6D8'}`, color: INK }}>{opt}</button>
+                ); })}</div>
+              </div>
+            );
+          })()}
+
+          {reviewMode === 'match' && (
+            <div className="flex-1 flex flex-col items-center justify-center px-6">
+              <div className="text-sm font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>Find the matching pairs</div>
+              <div className="grid grid-cols-3 gap-2.5 w-full">{matchCards.map((c, idx) => (
+                <button key={c.key} onClick={() => flipMatchCard(idx)} disabled={c.solved || matchBusy} className="rounded-xl flex items-center justify-center text-center p-2 font-bold transition-all" style={{ minHeight: 64, background: c.solved ? '#F1F8E4' : c.flipped ? '#fff' : INK, border: c.solved ? `1.5px solid ${LIME}` : '1px solid #EFE6D8', color: c.solved ? LIME_DK : c.flipped ? INK : '#fff', fontSize: 13 }}>
+                  {c.flipped || c.solved ? c.text : '?'}
+                </button>
+              ))}</div>
             </div>
-          </div>
-          <div className="px-6 pb-8 pt-3">
-            {reviewRevealed ? (
-              <div className="flex gap-3"><button onClick={() => submitReview(false)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: '#C2B8A8' }}>Forgot</button><button onClick={() => submitReview(true)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>✓ Knew it</button></div>
-            ) : <div style={{ height: 60 }} />}
-          </div>
+          )}
         </div>
       </div>
     );
@@ -870,43 +989,29 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     const d = activeDialogue; const step = d.steps[dlgIdx];
     const threadUpTo = step.from === 'them' ? dlgIdx : dlgIdx - 1;
     const threadSteps = d.steps.slice(0, Math.max(threadUpTo + 1, 0));
-
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+        <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh' }}>
           <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
           <div className="px-6 pt-3 pb-1 flex items-center gap-2 flex-shrink-0"><Users size={15} style={{ color: CORAL }} /><span className="text-[10px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
 
           <div className="flex-1 overflow-y-auto px-6 pt-3">
             {threadSteps.map((s, idx) => {
-              const isThem = s.from === 'them';
-              const faded = idx < dlgIdx;
-              const revealed = !!revealedEn[idx];
+              const isThem = s.from === 'them'; const faded = idx < dlgIdx; const revealed = !!revealedEn[idx];
               return (
                 <div key={idx} className={`flex ${isThem ? 'justify-start' : 'justify-end'} mb-3`} style={{ opacity: faded ? 0.42 : 1, transition: 'opacity 0.35s' }}>
                   {isThem && <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 self-end mb-1" style={{ background: '#F3ECE0' }}>🇨🇴</div>}
                   <div style={{ maxWidth: '78%' }}>
                     <div className="rounded-2xl px-4 py-2.5" style={{ background: isThem ? '#fff' : LIME_DK, border: isThem ? '1px solid #EFE6D8' : 'none', borderBottomLeftRadius: isThem ? 6 : 18, borderBottomRightRadius: isThem ? 18 : 6 }}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold" style={{ color: isThem ? INK : '#fff', fontSize: 16 }}>{s.es}</span>
-                        <button onClick={() => speak(s.es)} className="flex-shrink-0"><Volume2 size={13} style={{ color: isThem ? LIME_DK : '#fff', opacity: 0.85 }} /></button>
-                      </div>
+                      <div className="flex items-center gap-2"><span className="font-bold" style={{ color: isThem ? INK : '#fff', fontSize: 16 }}>{s.es}</span><button onClick={() => speak(s.es)} className="flex-shrink-0"><Volume2 size={13} style={{ color: isThem ? LIME_DK : '#fff', opacity: 0.85 }} /></button></div>
                     </div>
-                    <button onClick={() => setRevealedEn(prev => ({ ...prev, [idx]: !prev[idx] }))} className="text-[10px] font-medium mt-1 block" style={{ color: '#B5AB9A', textAlign: isThem ? 'left' : 'right', width: '100%' }}>
-                      {revealed ? s.en : '🇬🇧 Show translation'}
-                    </button>
+                    <button onClick={() => setRevealedEn(prev => ({ ...prev, [idx]: !prev[idx] }))} className="text-[10px] font-medium mt-1 block" style={{ color: '#B5AB9A', textAlign: isThem ? 'left' : 'right', width: '100%' }}>{revealed ? s.en : '🇬🇧 Show translation'}</button>
                   </div>
                 </div>
               );
             })}
-            {themTyping && (
-              <div className="flex justify-start mb-3">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0" style={{ background: '#F3ECE0' }}>🇨🇴</div>
-                <div className="rounded-2xl px-4 py-3.5" style={{ background: '#fff', border: '1px solid #EFE6D8', borderBottomLeftRadius: 6 }}>
-                  <div className="flex gap-1">{[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: '#C2B8A8', animation: `typingDot 1.2s ${i*0.2}s infinite` }} />)}</div>
-                </div>
-              </div>
-            )}
+            {themTyping && (<div className="flex justify-start mb-3"><div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0" style={{ background: '#F3ECE0' }}>🇨🇴</div><div className="rounded-2xl px-4 py-3.5" style={{ background: '#fff', border: '1px solid #EFE6D8', borderBottomLeftRadius: 6 }}><div className="flex gap-1">{[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: '#C2B8A8', animation: `typingDot 1.2s ${i*0.2}s infinite` }} />)}</div></div></div>)}
             <div ref={threadEndRef} style={{ height: 1 }} />
           </div>
 
@@ -914,9 +1019,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
             <div className="px-6 pt-2 flex-shrink-0">
               <div className="rounded-3xl p-5" style={{ background: '#fff', border: `1.5px solid ${CORAL}60` }}>
                 <div className="text-[10px] font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
-                {!dlgRevealed ? (
-                  <button onClick={() => setDlgRevealed(true)} className="text-sm font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>
-                ) : (<>
+                {!dlgRevealed ? (<button onClick={() => setDlgRevealed(true)} className="text-sm font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>) : (<>
                   <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}>{step.es}</div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
                   <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-[11px] font-medium mb-4 block" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
                   <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it out loud'}</button>
@@ -1035,11 +1138,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 <div className="rounded-2xl p-4" style={{ background: SKY }}>
                   <div className="text-[10px] font-black uppercase tracking-wide mb-2" style={{ color: '#4A6E8A' }}>Now you try — how would you say...</div>
                   <div className="text-xl font-black mb-3" style={{ color: INK }}>{b.deepDive.check.en}</div>
-                  {!bdCheckRevealed ? (
-                    <button onClick={() => { setBdCheckRevealed(true); speak(b.deepDive.check.es); }} className="px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: LIME_DK }}>Reveal</button>
-                  ) : (
-                    <div className="flex items-center gap-2"><div className="text-xl font-black" style={{ color: LIME_DK }}>{b.deepDive.check.es}</div><button onClick={() => speak(b.deepDive.check.es)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#fff' }}><Volume2 size={14} style={{ color: LIME_DK }} /></button></div>
-                  )}
+                  {!bdCheckRevealed ? (<button onClick={() => { setBdCheckRevealed(true); speak(b.deepDive.check.es); }} className="px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: LIME_DK }}>Reveal</button>) : (<div className="flex items-center gap-2"><div className="text-xl font-black" style={{ color: LIME_DK }}>{b.deepDive.check.es}</div><button onClick={() => speak(b.deepDive.check.es)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#fff' }}><Volume2 size={14} style={{ color: LIME_DK }} /></button></div>)}
                 </div>
               </div>
             )}
