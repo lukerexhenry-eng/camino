@@ -150,7 +150,7 @@ const BRIDGE = [
 ];
 
 const DIALOGUES = [
-  { id: 'dlg-meet', title: 'Meet someone', emoji: '👋', desc: 'A real first conversation, step by step', steps: [
+  { id: 'dlg-meet', title: 'Meet someone', emoji: '👋', desc: 'A real first conversation, step by step', unlock: { lessons: 0, hours: 0 }, steps: [
     { from: 'them', es: '¡Hola! ¿Cómo te llamas?', en: "Hi! What's your name?" },
     { from: 'you', prompt: 'Introduce yourself', es: 'Me llamo Luke.', en: 'My name is Luke.' },
     { from: 'them', es: 'Mucho gusto, Luke. ¿Cómo estás?', en: 'Nice to meet you, Luke. How are you?' },
@@ -158,6 +158,33 @@ const DIALOGUES = [
     { from: 'them', es: 'Muy bien también. ¿De dónde eres?', en: 'Very well too. Where are you from?' },
     { from: 'you', prompt: 'Say where you are from', es: 'Soy de Londres.', en: "I'm from London." },
     { from: 'them', es: '¡Qué bueno! Bienvenido.', en: "That's great! Welcome." },
+  ]},
+  { id: 'dlg-food', title: 'Order food', emoji: '🫓', desc: 'Practice ordering like a local', unlock: { lessons: 3, hours: 1 }, steps: [
+    { from: 'them', es: 'Hola, bienvenido. ¿Qué va a pedir?', en: 'Hi, welcome. What will you have?' },
+    { from: 'you', prompt: 'Say what you want', es: 'Quiero una arepa, por favor.', en: 'I want an arepa, please.' },
+    { from: 'them', es: '¿Algo de tomar?', en: 'Something to drink?' },
+    { from: 'you', prompt: 'Order a coffee', es: 'Un café, por favor.', en: 'A coffee, please.' },
+    { from: 'them', es: 'Perfecto. ¿Algo más?', en: 'Perfect. Anything else?' },
+    { from: 'you', prompt: "Say that's all", es: 'No, eso es todo, gracias.', en: "No, that's all, thanks." },
+    { from: 'them', es: '¡Buen provecho!', en: 'Enjoy your meal!' },
+  ]},
+  { id: 'dlg-family', title: 'Talk about family', emoji: '👨‍👩‍👧', desc: 'Share who you are with', unlock: { lessons: 5, hours: 2 }, steps: [
+    { from: 'them', es: '¿Tienes familia aquí?', en: 'Do you have family here?' },
+    { from: 'you', prompt: 'Say you have a brother', es: 'Tengo un hermano.', en: 'I have a brother.' },
+    { from: 'them', es: '¿Y tus padres?', en: 'And your parents?' },
+    { from: 'you', prompt: 'Say where they live', es: 'Mis padres viven en Londres.', en: 'My parents live in London.' },
+    { from: 'them', es: '¡Qué bueno! ¿Los ves seguido?', en: 'That\'s nice! Do you see them often?' },
+    { from: 'you', prompt: 'Say yes, every Sunday', es: 'Sí, cada domingo.', en: 'Yes, every Sunday.' },
+    { from: 'them', es: 'Eso es bonito.', en: "That's lovely." },
+  ]},
+  { id: 'dlg-job', title: 'Talk about your work', emoji: '💼', desc: 'Explain your career change', unlock: { lessons: 8, hours: 4 }, steps: [
+    { from: 'them', es: '¿En qué trabajas?', en: 'What do you do for work?' },
+    { from: 'you', prompt: 'Say you are learning plumbing', es: 'Estoy aprendiendo plomería.', en: "I'm learning plumbing." },
+    { from: 'them', es: '¿Por qué cambiaste de carrera?', en: 'Why did you change careers?' },
+    { from: 'you', prompt: 'Say you wanted something new', es: 'Quería algo nuevo.', en: 'I wanted something new.' },
+    { from: 'them', es: '¡Qué valiente! Te va a ir bien.', en: "That's brave! You'll do well." },
+    { from: 'you', prompt: 'Thank them', es: 'Gracias, eso espero.', en: 'Thanks, I hope so.' },
+    { from: 'them', es: '¡Seguro que sí!', en: 'For sure!' },
   ]},
 ];
 
@@ -193,6 +220,15 @@ const GENERAL_SUGGESTIONS = [
 ];
 
 const REVIEW_INTERVALS = [1, 1, 2, 4, 8, 16];
+
+// Five genuinely different textures, one per Bridge card — not just a colour swap.
+const BRIDGE_PATTERNS = [
+  { backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 2px, transparent 2px, transparent 11px)' },
+  { backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.22) 1.4px, transparent 1.6px)', backgroundSize: '9px 9px' },
+  { backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1.5px, transparent 1.5px, transparent 9px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1.5px, transparent 1.5px, transparent 9px)' },
+  { backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 2px, transparent 2px, transparent 12px)' },
+  { backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.18) 2px, transparent 2.2px)', backgroundSize: '15px 15px' },
+];
 
 const BASE_CURRICULUM = {
   faith: [
@@ -258,23 +294,50 @@ const CamiFace = ({ mood, s }) => {
   const cheer = mood === 'cheer' || mood === 'proud'; const think = mood === 'think'; const listen = mood === 'listen';
   return (
     <svg width={s} height={s} viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="30" fill="#8A5530" />
-      <path d="M22 46 Q24 20 50 19 Q76 20 78 46 Q70 34 50 34 Q30 34 22 46 Z" fill="#2E1A12" />
-      <circle cx="34" cy="58" r="5.5" fill={CORAL} opacity="0.45" /><circle cx="66" cy="58" r="5.5" fill={CORAL} opacity="0.45" />
-      {cheer ? (<><path d="M30 48 Q37 42 44 48" stroke="#1A0F0A" strokeWidth="3" fill="none" strokeLinecap="round" /><path d="M56 48 Q63 42 70 48" stroke="#1A0F0A" strokeWidth="3" fill="none" strokeLinecap="round" /></>)
-        : (<><ellipse cx={think ? 39 : 37} cy="49" rx="3.4" ry={listen ? 2 : 4} fill="#1A0F0A" /><ellipse cx={think ? 65 : 63} cy="49" rx="3.4" ry={listen ? 2 : 4} fill="#1A0F0A" /><circle cx={think ? 40 : 38} cy="47.5" r="1.1" fill="#fff" /><circle cx={think ? 66 : 64} cy="47.5" r="1.1" fill="#fff" /></>)}
-      {think && <path d="M58 41 Q64 39 70 42" stroke="#2E1A12" strokeWidth="2" fill="none" strokeLinecap="round" />}
-      {cheer ? <path d="M40 62 Q50 74 60 62 Q50 68 40 62 Z" fill="#3A1E12" /> : think ? <path d="M44 64 Q50 61 56 64" stroke="#3A1E12" strokeWidth="2.5" fill="none" strokeLinecap="round" /> : listen ? <circle cx="50" cy="64" r="3.5" fill="#3A1E12" /> : <path d="M40 62 Q50 70 60 62" stroke="#3A1E12" strokeWidth="2.8" fill="none" strokeLinecap="round" />}
+      <defs><radialGradient id="empanadaGrad" cx="35%" cy="25%" r="80%"><stop offset="0%" stopColor="#F0C36A" /><stop offset="60%" stopColor="#D89A3E" /><stop offset="100%" stopColor="#A8651F" /></radialGradient></defs>
+      <ellipse cx="17" cy="64" rx="5.5" ry="9" fill="url(#empanadaGrad)" transform="rotate(25 17 64)" />
+      <ellipse cx="83" cy="64" rx="5.5" ry="9" fill="url(#empanadaGrad)" transform="rotate(-25 83 64)" />
+      <path d="M16 72 Q14 28 50 17 Q86 28 84 72 Q84 80 74 80 L26 80 Q16 80 16 72 Z" fill="url(#empanadaGrad)" />
+      <path d="M21 34 Q26 27 31 34 Q36 27 41 34 Q46 27 51 34 Q56 27 61 34 Q66 27 71 34 Q76 27 79 33" stroke="#A8651F" strokeWidth="2.4" fill="none" strokeLinecap="round" opacity="0.6" />
+      <ellipse cx="38" cy="32" rx="11" ry="7" fill="#fff" opacity="0.22" />
+      <rect x="27" y="44" width="17" height="12" rx="5.5" fill="#1A1310" />
+      <rect x="56" y="44" width="17" height="12" rx="5.5" fill="#1A1310" />
+      <rect x="44" y="47" width="12" height="3" rx="1.5" fill="#1A1310" />
+      <path d="M30 47 L36 52" stroke="#fff" strokeWidth="1.6" opacity="0.4" strokeLinecap="round" />
+      <path d="M59 47 L65 52" stroke="#fff" strokeWidth="1.6" opacity="0.4" strokeLinecap="round" />
+      {cheer ? <path d="M34 66 Q50 79 66 66 Q50 72 34 66 Z" fill="#5A3010" />
+        : think ? <path d="M37 66 Q48 64 60 69" stroke="#5A3010" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+        : listen ? <ellipse cx="50" cy="67" rx="3.2" ry="3.8" fill="#5A3010" />
+        : <path d="M36 66 Q50 73 64 66" stroke="#5A3010" strokeWidth="2.8" fill="none" strokeLinecap="round" />}
     </svg>
   );
 };
-const Camilo = ({ mood = 'happy', size = 96 }) => (
-  <div style={{ width: size, height: size, position: 'relative', flexShrink: 0 }}>
-    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: `linear-gradient(135deg, ${LIME}, ${LIME_DK})`, padding: size * 0.06 }}>
-      <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#FFFDF8', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}><CamiFace mood={mood} s={size * 0.92} /></div>
+// Real artwork, with a guaranteed-safe fallback to the SVG empanada if a file isn't there yet or fails to load.
+const CAMI_IMAGES = {
+  happy: '/cami/happy.jpg',
+  wave: '/cami/wave.jpg',
+  listen: '/cami/listen.jpg',
+  cheer: '/cami/cheer.jpg',
+  proud: '/cami/proud.jpg',
+  think: '/cami/think.jpg',
+};
+const Camilo = ({ mood = 'happy', size = 96 }) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  const imgSrc = CAMI_IMAGES[mood];
+  return (
+    <div style={{ width: size, height: size, position: 'relative', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: `linear-gradient(135deg, ${LIME}, ${LIME_DK})`, padding: size * 0.06 }}>
+        <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#FFFDF8', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {imgSrc && !imgFailed ? (
+            <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <CamiFace mood={mood} s={size * 0.92} />
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 const camiSay = { greetNew: "¡Hola! I'm Camilo. We'll do this together — un paso a la vez.", greetBack: "¡Qué bueno verte! Ready when you are.", correct: ["¡Eso es! 🎉", "¡Perfecto!", "¡Muy bien!", "¡Eso, eso!"], close: "¡Casi! So close — try once more.", encourage: "Tranquilo — we'll get it. Try again." };
 
 const Keyframes = () => (<style>{`
@@ -284,7 +347,17 @@ const Keyframes = () => (<style>{`
   @keyframes badgeBurst { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 55% { transform: scale(1.15); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
   @keyframes recPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
   @keyframes typingDot { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+  @keyframes solidify { 0% { transform: scale(1); } 35% { transform: scale(1.18); } 100% { transform: scale(1); } }
+  .anim-solidify { animation: solidify 0.5s ease-out; }
   .anim-glow { animation: glowPulse 1.4s ease-in-out 2; } .anim-count { animation: countUp 0.7s ease-out; } .anim-card-rise { animation: cardRise 0.4s ease-out both; } .anim-badge { animation: badgeBurst 0.6s cubic-bezier(.34,1.56,.64,1) both; } .anim-rec { animation: recPulse 1s ease-in-out infinite; }
+  .flip-card { perspective: 800px; background: transparent; border: none; padding: 0; }
+  .flip-inner { position: relative; width: 100%; height: 100%; min-height: 64px; transition: transform 0.45s; transform-style: preserve-3d; }
+  .flip-inner.is-flipped { transform: rotateY(180deg); }
+  .flip-face { position: absolute; inset: 0; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; }
+  .flip-face.flip-back { transform: rotateY(180deg); }
+  .swipe-row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+  .swipe-row::-webkit-scrollbar { display: none; }
+  .swipe-card { scroll-snap-align: start; flex: 0 0 auto; }
 `}</style>);
 
 const PageArc = ({ base = CREAM, circle = LIME }) => (
@@ -387,10 +460,11 @@ export default function Camino() {
   const [inputMinutes, setInputMinutes] = useState(saved.inputMinutes || 0);
   const [inputLog, setInputLog] = useState(saved.inputLog || []);
   const [justLogged, setJustLogged] = useState(null);
+  const [uiLang, setUiLang] = useState(saved.uiLang || 'en');
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog })); } catch (e) {}
-  }, [stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog, uiLang })); } catch (e) {}
+  }, [stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog, uiLang]);
 
   useEffect(() => { threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [dlgIdx, dlgRevealed, themTyping]);
 
@@ -657,6 +731,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     <div className="flex justify-between items-center px-6 pt-7 pb-3 relative">
       <div className="text-3xl font-black tracking-tighter leading-none" style={{ color: LIME_DK, letterSpacing: '-0.04em' }}>CAMINO</div>
       <div className="flex gap-2 items-center">
+        <button onClick={() => setUiLang(l => l === 'en' ? 'es' : 'en')} className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all" style={{ background: uiLang === 'es' ? LIME : '#F1F8E4', color: uiLang === 'es' ? '#fff' : LIME_DK }} title="Switch navigation to Spanish">{uiLang === 'es' ? 'ES' : 'EN'}</button>
         <button onClick={() => setView('progress')} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#F1F8E4' }}><BarChart3 size={15} style={{ color: LIME_DK }} /></button>
         <div key={`s${stats.streak}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full ${stats.streak > 0 ? 'anim-glow' : ''}`} style={{ background: '#FFEDD9' }}><Flame size={13} className="text-orange-500" /><span className="font-bold text-xs" style={{ color: INK }}>{stats.streak}</span></div>
         <div key={`l${stats.level}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full ${stats.level > 1 ? 'anim-glow' : ''}`} style={{ background: LIME }}><span className="font-black text-white text-xs">Lv {stats.level}</span></div>
@@ -665,12 +740,12 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
   );
 
   const TabBar = () => {
-    const tabs = [{ id: 'learn', label: 'Learn', icon: GraduationCap }, { id: 'create', label: 'Create', icon: Wand2 }, { id: 'watch', label: 'Watch', icon: Film }, { id: 'worlds', label: 'Worlds', icon: Globe }];
+    const tabs = [{ id: 'learn', label: 'Learn', es: 'Aprender', icon: GraduationCap }, { id: 'create', label: 'Create', es: 'Crear', icon: Wand2 }, { id: 'watch', label: 'Watch', es: 'Ver', icon: Film }, { id: 'worlds', label: 'Worlds', es: 'Mundos', icon: Globe }];
     return (
       <div className="fixed bottom-0 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid #EFE6D8' }}>
         <div className="max-w-md mx-auto flex">
           {tabs.map(t => { const Icon = t.icon; const active = tab === t.id; return (
-            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-3"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-[10px] font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{t.label}</span></button>
+            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-3"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-[10px] font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
           ); })}
         </div>
       </div>
@@ -710,13 +785,13 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               <div className="relative w-full rounded-2xl mb-4 overflow-hidden" style={{ minHeight: 200, background: G.hero }}>
                 <div className="absolute top-4 right-4"><Camilo mood={isReturning ? 'happy' : 'wave'} size={56} /></div>
                 <div className="relative p-6 flex flex-col justify-end" style={{ minHeight: 200 }}>
-                  <div className="text-[11px] font-black uppercase tracking-[0.2em] mb-1.5 text-white/80">{isReturning ? `Level ${stats.level} · ${stats.streak} day streak` : 'Welcome, Luke'}</div>
-                  <div className="font-black text-white text-4xl leading-[0.95] tracking-tight mb-3">{isReturning ? 'Keep going.' : "Let's begin."}</div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] mb-1.5 text-white/80">{uiLang === 'es' ? (isReturning ? `Nivel ${stats.level} · racha de ${stats.streak} días` : '¡Bienvenido, Luke!') : (isReturning ? `Level ${stats.level} · ${stats.streak} day streak` : 'Welcome, Luke')}</div>
+                  <div className="font-black text-white text-4xl leading-[0.95] tracking-tight mb-3">{uiLang === 'es' ? (isReturning ? 'Sigue así.' : 'Empecemos.') : (isReturning ? 'Keep going.' : "Let's begin.")}</div>
                   <div className="rounded-xl px-3.5 py-3 mb-4 flex items-start gap-2.5" style={{ background: 'rgba(255,255,255,0.18)' }}>
                     <span className="text-base flex-shrink-0">💬</span>
-                    <div><div className="text-white/70 text-[10px] font-black uppercase tracking-wide mb-0.5">Try this with {convoName || 'your friend'}</div><div className="text-white text-sm font-medium leading-snug">{getHeroSuggestion()}</div></div>
+                    <div><div className="text-white/70 text-[10px] font-black uppercase tracking-wide mb-0.5">{uiLang === 'es' ? 'Intenta esto con' : 'Try this with'} {convoName || (uiLang === 'es' ? 'tu amigo' : 'your friend')}</div><div className="text-white text-sm font-medium leading-snug">{getHeroSuggestion()}</div></div>
                   </div>
-                  <div className="flex items-center gap-2"><div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.3)' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpInLevel(stats.xp)}%`, background: '#fff' }} /></div><span className="text-white/90 text-[11px] font-bold whitespace-nowrap">{100 - xpInLevel(stats.xp)} XP to Lv {stats.level + 1}</span></div>
+                  <div className="flex items-center gap-2"><div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.3)' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpInLevel(stats.xp)}%`, background: '#fff' }} /></div><span className="text-white/90 text-[11px] font-bold whitespace-nowrap">{uiLang === 'es' ? `${100 - xpInLevel(stats.xp)} XP para Nv ${stats.level + 1}` : `${100 - xpInLevel(stats.xp)} XP to Lv ${stats.level + 1}`}</span></div>
                 </div>
               </div>
 
@@ -730,9 +805,9 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 </button>
               ); })()}
 
-              <button onClick={() => startDialogue(DIALOGUES[0])} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#fff', border: `1.5px solid ${CORAL}50` }}>
+              <button onClick={() => { const pool = DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours); startDialogue(pool[Math.floor(Math.random() * pool.length)]); }} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#fff', border: `1.5px solid ${CORAL}50` }}>
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#FFEDE5' }}>👋</div>
-                <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Practice: {DIALOGUES[0].title}</div><div className="text-xs" style={{ color: '#8A8478' }}>{DIALOGUES[0].desc}</div></div>
+                <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Practice a conversation</div><div className="text-xs" style={{ color: '#8A8478' }}>{DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours).length} of {DIALOGUES.length} unlocked — more open as you learn</div></div>
                 <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
               </button>
 
@@ -750,8 +825,8 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               )}
 
               <div className="flex items-center justify-between mb-2.5 px-1"><div className="flex items-center gap-2"><Link2 size={15} style={{ color: LIME_DK }} /><h2 className="text-base font-black tracking-tight" style={{ color: INK }}>The Bridge</h2></div><span className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>Unlock words fast</span></div>
-              <div className="grid grid-cols-3 gap-2.5 mb-6">{BRIDGE.map((b, idx) => { const done = stats.completedLessons.includes(b.id); const locked = idx > 0 && !stats.completedLessons.includes(BRIDGE[idx - 1].id); const bg = ['#7FB22E', '#4FA3E0', '#9B6BE0', '#E8607A', '#F2823C'][idx % 5]; return (
-                <button key={b.id} disabled={locked} onClick={() => startBridge(b)} className={`relative rounded-xl overflow-hidden p-2.5 flex flex-col justify-between text-left ${locked ? 'opacity-40' : 'active:scale-[0.96]'}`} style={{ minHeight: 130, background: bg }}>
+              <div className="grid grid-cols-3 gap-2.5 mb-6">{BRIDGE.map((b, idx) => { const done = stats.completedLessons.includes(b.id); const locked = idx > 0 && !stats.completedLessons.includes(BRIDGE[idx - 1].id); const bg = ['#7FB22E', '#4FA3E0', '#9B6BE0', '#E8607A', '#F2823C'][idx % 5]; const pat = BRIDGE_PATTERNS[idx % BRIDGE_PATTERNS.length]; return (
+                <button key={b.id} disabled={locked} onClick={() => startBridge(b)} className={`relative rounded-xl overflow-hidden p-2.5 flex flex-col justify-between text-left ${locked ? 'opacity-40' : 'active:scale-[0.96]'}`} style={{ minHeight: 130, backgroundColor: bg, backgroundImage: pat.backgroundImage, backgroundSize: pat.backgroundSize || 'auto' }}>
                   <div className="flex justify-end">{done ? <div className="w-6 h-6 rounded-full bg-white/90 flex items-center justify-center"><Check size={14} style={{ color: LIME_DK }} /></div> : locked ? <Lock size={14} className="text-white/70" /> : <Zap size={16} className="text-white" />}</div>
                   <div className="text-white font-black text-[13px] leading-tight">{b.rule}</div>
                 </button>
@@ -888,11 +963,13 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
       <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto pb-10">
           <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Your progress</h1></div>
-          <div className="px-6 mt-4 grid grid-cols-3 gap-2.5">
-            <div className="rounded-2xl p-3 text-center" style={{ background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: LIME_DK }}>{stats.level}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
-            <div className="rounded-2xl p-3 text-center" style={{ background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: INK }}>{stats.xp}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>TOTAL XP</div></div>
-            <div className="rounded-2xl p-3 text-center" style={{ background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl flex items-center justify-center gap-1" style={{ color: INK }}>{stats.streak}<Flame size={14} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
-          </div>
+          <Keyframes />
+          <div className="px-6 mt-4"><div className="swipe-row">
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: LIME_DK }}>{stats.level}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: INK }}>{stats.xp}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>TOTAL XP</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl flex items-center justify-center gap-1" style={{ color: INK }}>{stats.streak}<Flame size={14} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: '#4FA3E0' }}>{(inputMinutes / 60).toFixed(1)}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>INPUT HRS</div></div>
+          </div></div>
           <div className="px-6 mt-6 space-y-4">{rows.map(r => (
             <div key={r.label}><div className="flex justify-between text-sm mb-1"><span className="font-bold" style={{ color: INK }}>{r.label}</span><span className="font-bold" style={{ color: r.color }}>{r.val}</span></div><div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${r.pct}%`, background: r.color }} /></div></div>
           ))}</div>
@@ -982,8 +1059,11 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
             <div className="flex-1 flex flex-col items-center justify-center px-6">
               <div className="text-sm font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>Find the matching pairs</div>
               <div className="grid grid-cols-3 gap-2.5 w-full">{matchCards.map((c, idx) => (
-                <button key={c.key} onClick={() => flipMatchCard(idx)} disabled={c.solved || matchBusy} className="rounded-xl flex items-center justify-center text-center p-2 font-bold transition-all" style={{ minHeight: 64, background: c.solved ? '#F1F8E4' : c.flipped ? '#fff' : INK, border: c.solved ? `1.5px solid ${LIME}` : '1px solid #EFE6D8', color: c.solved ? LIME_DK : c.flipped ? INK : '#fff', fontSize: 13 }}>
-                  {c.flipped || c.solved ? c.text : '?'}
+                <button key={c.key} onClick={() => flipMatchCard(idx)} disabled={c.solved || matchBusy} className={`flip-card ${c.solved ? 'anim-solidify' : ''}`} style={{ minHeight: 64 }}>
+                  <div className={`flip-inner ${c.flipped || c.solved ? 'is-flipped' : ''}`}>
+                    <div className="flip-face" style={{ borderRadius: 12, background: INK, color: '#fff', fontSize: 18, fontWeight: 900 }}>?</div>
+                    <div className="flip-face flip-back" style={{ borderRadius: 12, background: c.solved ? '#F1F8E4' : '#fff', border: c.solved ? `1.5px solid ${LIME}` : '1px solid #EFE6D8', color: c.solved ? LIME_DK : INK, fontSize: 13, fontWeight: 700, padding: 6, textAlign: 'center' }}>{c.text}</div>
+                  </div>
                 </button>
               ))}</div>
             </div>
@@ -1248,7 +1328,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               <div className="text-center"><div className="font-black text-2xl flex items-center gap-1" style={{ color: INK }}>{stats.streak}<Flame size={16} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
             </div>)}
             {nextSuggestion ? (<>
-              <button onClick={() => { if (nextSuggestion.tab === 'dialogue') { setNextSuggestion(null); startDialogue(DIALOGUES[0]); } else if (nextSuggestion.tab === 'progress') { setNextSuggestion(null); setView('progress'); } else { setTab(nextSuggestion.tab); setNextSuggestion(null); setView('tabs'); } }} className="w-full py-4 rounded-2xl font-black text-white mb-2" style={{ background: LIME_DK }}>{nextSuggestion.label} →</button>
+              <button onClick={() => { if (nextSuggestion.tab === 'dialogue') { setNextSuggestion(null); const pool = DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours); startDialogue(pool[Math.floor(Math.random() * pool.length)]); } else if (nextSuggestion.tab === 'progress') { setNextSuggestion(null); setView('progress'); } else { setTab(nextSuggestion.tab); setNextSuggestion(null); setView('tabs'); } }} className="w-full py-4 rounded-2xl font-black text-white mb-2" style={{ background: LIME_DK }}>{nextSuggestion.label} →</button>
               <button onClick={() => { setCorrectedFrom(null); setNextSuggestion(null); setView('tabs'); }} className="w-full py-2.5 rounded-2xl font-bold text-sm" style={{ background: '#F3ECE0', color: INK }}>Back to home</button>
             </>) : (<button onClick={() => { setCorrectedFrom(null); setView('tabs'); }} className="w-full py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>Continue</button>)}
           </div>
