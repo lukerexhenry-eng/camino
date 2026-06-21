@@ -386,6 +386,7 @@ export default function Camino() {
   // Real input-hours tracking — self-logged from Watch & Absorb, feeds the progress chart.
   const [inputMinutes, setInputMinutes] = useState(saved.inputMinutes || 0);
   const [inputLog, setInputLog] = useState(saved.inputLog || []);
+  const [justLogged, setJustLogged] = useState(null);
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog })); } catch (e) {}
@@ -627,11 +628,14 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
   // ===== Watch & Absorb input logging =====
   const logInput = (minutes) => {
+    if (justLogged) return;
     const today = new Date().toISOString().slice(0, 10);
     setInputLog(prev => { const idx = prev.findIndex(e => e.date === today); if (idx >= 0) { const copy = [...prev]; copy[idx] = { ...copy[idx], minutes: copy[idx].minutes + minutes }; return copy; } return [...prev, { date: today, minutes }]; });
     setInputMinutes(prev => prev + minutes);
     const gain = Math.round(minutes / 2); const newXp = stats.xp + gain;
     setStats(p => ({ ...p, xp: newXp, level: levelFromXp(newXp), streak: Math.max(p.streak, 1) }));
+    setJustLogged(minutes);
+    setTimeout(() => setJustLogged(null), 900);
   };
   const buildHoursSeries = () => {
     const sorted = [...inputLog].sort((a, b) => a.date.localeCompare(b.date));
@@ -805,7 +809,11 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               ); })}</div>
               <div className="mt-5 rounded-2xl p-4" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
                 <div className="flex items-center justify-between mb-3"><div className="font-black text-sm" style={{ color: INK }}>Log what you watched</div><div key={inputMinutes} className="text-xs font-bold anim-glow" style={{ color: LIME_DK }}>{(inputMinutes / 60).toFixed(1)}h total</div></div>
-                <div className="grid grid-cols-4 gap-2">{[5, 10, 15, 30].map(m => (<button key={m} onClick={() => logInput(m)} className="rounded-xl py-2.5 font-bold text-sm active:scale-[0.96] transition-all" style={{ background: '#F1F8E4', color: LIME_DK }}>{m}m</button>))}</div>
+                <div className="grid grid-cols-4 gap-2">{[5, 10, 15, 30].map(m => { const isJust = justLogged === m; return (
+                  <button key={m} onClick={() => logInput(m)} disabled={!!justLogged} className={`rounded-xl py-2.5 font-bold text-sm flex items-center justify-center gap-1 ${isJust ? 'anim-glow' : ''}`} style={{ background: isJust ? LIME_DK : '#F1F8E4', color: isJust ? '#fff' : LIME_DK, transform: isJust ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s ease, background 0.2s ease' }}>
+                    {isJust ? <><Check size={14} /> +{m}</> : `${m}m`}
+                  </button>
+                ); })}</div>
               </div>
               <div className="mt-4 rounded-2xl p-4" style={{ background: SKY, border: '1px solid #DCEBF8' }}><p className="text-xs leading-relaxed" style={{ color: '#4A6E8A' }}>💡 <span className="font-bold">Why this works:</span> watching input you mostly understand is how your brain absorbs Spanish naturally. Even 10 minutes counts.</p></div>
             </div>
