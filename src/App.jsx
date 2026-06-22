@@ -290,6 +290,74 @@ const EXAM = { title: 'Checkpoint 1', passMark: 3, questions: [
   { prompt: 'Say "the coffee" in Spanish', answer: 'el café', speak: true },
 ]};
 
+// ===== Grammar Glue — the small connecting words that hold sentences together =====
+const GLUE_CATEGORIES = [
+  { title: 'Subject pronouns', es: 'Pronombres', emoji: '🙋',
+    note: 'In Bogotá these are often dropped — the verb ending already tells you who. "Hablo español" already means "I speak Spanish" without needing "yo."',
+    items: [
+      { term: 'yo', meaning: 'I' }, { term: 'tú', meaning: 'you (friendly)' },
+      { term: 'usted', meaning: 'you (respectful — used warmly in Colombia, not just formally)' },
+      { term: 'él', meaning: 'he' }, { term: 'ella', meaning: 'she' },
+      { term: 'nosotros', meaning: 'we' }, { term: 'ellos', meaning: 'they (masc./mixed)' }, { term: 'ellas', meaning: 'they (fem.)' },
+    ] },
+  { title: 'My / your / their', es: 'Posesivos', emoji: '🏠',
+    note: 'These change with the noun they describe, not with how much you mean it. "mis" because the next word is plural — not "more mine."',
+    items: [
+      { term: 'mi', meaning: 'my (before a singular noun)' }, { term: 'mis', meaning: 'my (before a plural noun)' },
+      { term: 'tu', meaning: 'your (singular noun)' }, { term: 'tus', meaning: 'your (plural noun)' },
+      { term: 'su', meaning: "his / her / their / your (formal) — singular noun" }, { term: 'sus', meaning: "his / her / their / your (formal) — plural noun" },
+    ] },
+  { title: 'Me / you / it', es: 'Objetos', emoji: '👉',
+    note: 'These usually come before the verb — the opposite order from English. "Lo veo" = "I see it," not "It I see."',
+    items: [
+      { term: 'me', meaning: 'me / to me' }, { term: 'te', meaning: 'you / to you' },
+      { term: 'lo', meaning: 'it / him (direct object)' }, { term: 'la', meaning: 'it / her (direct object)' },
+      { term: 'le', meaning: 'to him / to her / to you (indirect object)' },
+    ] },
+  { title: 'Little connectors', es: 'Conectores', emoji: '🔗', note: 'Tiny words, huge job — they\'re what makes vocab sound like a real sentence.',
+    items: [
+      { term: 'y', meaning: 'and' }, { term: 'pero', meaning: 'but' }, { term: 'porque', meaning: 'because' },
+      { term: 'entonces', meaning: 'so / then' }, { term: 'también', meaning: 'also / too' },
+    ] },
+  { title: 'A / with / without', es: 'Preposiciones', emoji: '📍', note: '',
+    items: [
+      { term: 'para', meaning: 'for / in order to' }, { term: 'con', meaning: 'with' }, { term: 'sin', meaning: 'without' },
+      { term: 'de', meaning: 'of / from' }, { term: 'en', meaning: 'in / on / at' }, { term: 'a', meaning: 'to / at' },
+    ] },
+  { title: 'Ser vs estar — both mean "to be"', es: 'Ser y estar', emoji: '🌀',
+    note: 'ser = what something IS (permanent — identity, origin). estar = how something is RIGHT NOW (temporary — mood, location).',
+    items: [
+      { term: 'soy', meaning: '(ser) I am — permanent: "Soy de Londres"' }, { term: 'eres', meaning: '(ser) you are — permanent' },
+      { term: 'es', meaning: '(ser) he/she/it is — permanent' },
+      { term: 'estoy', meaning: '(estar) I am — right now: "Estoy bien"' }, { term: 'estás', meaning: '(estar) you are — right now' },
+      { term: 'está', meaning: '(estar) he/she/it is — right now' },
+    ] },
+  { title: 'The, a', es: 'Artículos', emoji: '📖', note: 'Spanish nouns are masculine or feminine, and the article has to match.',
+    items: [
+      { term: 'el', meaning: 'the (masc.)' }, { term: 'la', meaning: 'the (fem.)' },
+      { term: 'los', meaning: 'the, plural (masc.)' }, { term: 'las', meaning: 'the, plural (fem.)' },
+      { term: 'un', meaning: 'a / an (masc.)' }, { term: 'una', meaning: 'a / an (fem.)' },
+    ] },
+  { title: 'Power verbs', es: 'Verbos clave', emoji: '⚡', note: 'Three verbs that unlock most everyday sentences.',
+    items: [
+      { term: 'tengo', meaning: 'I have' }, { term: 'tienes', meaning: 'you have' },
+      { term: 'quiero', meaning: 'I want' }, { term: 'quieres', meaning: 'you want' },
+      { term: 'puedo', meaning: 'I can' }, { term: 'puedes', meaning: 'you can' },
+    ] },
+  { title: 'When little words fuse together', es: 'Contracciones', emoji: '🧷',
+    note: 'Spanish has exactly two real contractions — and a couple of fixed "with me/you" forms. Tap any one below.',
+    items: [
+      { term: 'al', meaning: 'a + el (to the) — the only two contractions in Spanish are al and del' },
+      { term: 'del', meaning: 'de + el (of/from the)' },
+      { term: 'conmigo', meaning: 'con + mí (with me) — irregular fixed form, not "con mí"' },
+      { term: 'contigo', meaning: 'con + ti (with you) — irregular fixed form, not "con tú"' },
+    ],
+    extra: 'There\'s a third pattern worth knowing, but it can\'t be reliably tagged word-by-word here: pronouns glue onto the end of infinitives, gerunds, and commands — decir + lo → decirlo ("to say it"), dar + me + lo → dármelo ("give it to me"), di + lo → dilo ("say it"). The ending looks like an ordinary word, so spotting it depends on context, not the letters alone.' },
+];
+const GLUE_LOOKUP = {};
+GLUE_CATEGORIES.forEach(cat => { cat.items.forEach(item => { const key = item.term.toLowerCase(); if (!GLUE_LOOKUP[key]) GLUE_LOOKUP[key] = { meaning: item.meaning, category: cat.title }; }); });
+const stripPunct = (w) => w.replace(/^[¿¡"'(]+|[?!"'.,;:)]+$/g, '');
+
 const CamiFace = ({ mood, s }) => {
   const cheer = mood === 'cheer' || mood === 'proud'; const think = mood === 'think'; const listen = mood === 'listen';
   return (
@@ -369,18 +437,44 @@ const PageArc = ({ base = CREAM, circle = LIME }) => (
 
 const SegWord = ({ segs, color }) => (<span>{segs.map((s, i) => <span key={i} style={{ color: s.c ? color : INK, fontWeight: s.c ? 900 : 700 }}>{s.t}</span>)}</span>);
 
-const RecordPlayback = ({ recording, recordedUrl, onToggle, onPlay }) => (
-  <div className="flex gap-2 mt-2">
-    <button onClick={onToggle} className="flex-1 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: recording ? '#FFEDE5' : '#F1F8E4', color: recording ? CORAL : LIME_DK }}>
-      {recording ? <Square size={14} fill={CORAL} className="anim-rec" /> : <Mic size={14} />}
-      {recording ? 'Stop recording' : 'Record yourself'}
-    </button>
-    {recordedUrl && (
-      <button onClick={onPlay} className="flex-1 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: '#fff', border: '1px solid #EFE6D8', color: INK }}>
-        <Play size={14} /> Play it back
-      </button>
-    )}
+// Renders a Spanish phrase with any "glue" words (mi, tus, le, porque...) tappable for a one-line why-explanation.
+const TappableEs = ({ text, sentenceKey, activeKey, onTap, color }) => {
+  const words = text.split(' ');
+  return (
+    <span>
+      {words.map((w, i) => {
+        const key = `${sentenceKey}-${i}`;
+        const clean = stripPunct(w).toLowerCase();
+        const entry = GLUE_LOOKUP[clean];
+        const isActive = activeKey === key;
+        return (
+          <React.Fragment key={key}>
+            {entry ? (
+              <span
+                onClick={(e) => { e.stopPropagation(); onTap(isActive ? null : { key, word: w, ...entry }); }}
+                style={{ textDecoration: 'underline dotted', textDecorationColor: isActive ? CORAL : (color || '#C2B8A8'), textUnderlineOffset: 3, cursor: 'pointer' }}
+              >{w}</span>
+            ) : w}
+            {i < words.length - 1 ? ' ' : ''}
+          </React.Fragment>
+        );
+      })}
+    </span>
+  );
+};
+const GlueExplain = ({ active }) => active ? (
+  <div className="rounded-xl px-3 py-2 mt-1.5 anim-card-rise" style={{ background: '#FFF3D6', border: '1px solid #E5B84B' }}>
+    <span className="text-xs font-black" style={{ color: '#8A6A1E' }}>{active.word}</span>
+    <span className="text-xs ml-1" style={{ color: '#6E5A2E' }}>— {active.meaning}</span>
   </div>
+) : null;
+
+const RecordPlayback = ({ recordedUrl, onPlay }) => (
+  recordedUrl ? (
+    <button onClick={onPlay} className="w-full mt-2 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: '#fff', border: '1px solid #EFE6D8', color: INK }}>
+      <Play size={14} /> Hear yourself say it
+    </button>
+  ) : null
 );
 
 export default function Camino() {
@@ -405,6 +499,7 @@ export default function Camino() {
   const [dlgIdx, setDlgIdx] = useState(0);
   const [dlgRevealed, setDlgRevealed] = useState(false);
   const [revealedEn, setRevealedEn] = useState({});
+  const [glueActive, setGlueActive] = useState(null);
   const [themTyping, setThemTyping] = useState(false);
   const threadEndRef = useRef(null);
 
@@ -412,10 +507,11 @@ export default function Camino() {
   const [heard, setHeard] = useState('');
   const [matchResult, setMatchResult] = useState(null);
 
-  const [recording, setRecording] = useState(false);
   const [recordedUrl, setRecordedUrl] = useState(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const audioCtxRef = useRef(null);
+  const sessionStartRef = useRef(Date.now());
 
   const [customLessons, setCustomLessons] = useState(saved.customLessons || []);
   const [createInput, setCreateInput] = useState('');
@@ -466,6 +562,11 @@ export default function Camino() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog, uiLang })); } catch (e) {}
   }, [stats, certificates, notes, links, convoDate, convoName, customLessons, reviewItems, inputMinutes, inputLog, uiLang]);
 
+  const [progressBarsReady, setProgressBarsReady] = useState(false);
+  useEffect(() => {
+    if (view === 'progress') { setProgressBarsReady(false); const t = setTimeout(() => setProgressBarsReady(true), 60); return () => clearTimeout(t); }
+  }, [view]);
+
   useEffect(() => { threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [dlgIdx, dlgRevealed, themTyping]);
 
   const levelFromXp = (xp) => Math.floor(xp / 100) + 1;
@@ -476,39 +577,72 @@ export default function Camino() {
   const speak = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-CO'; u.rate = 0.8; window.speechSynthesis.speak(u); } };
   const speakEn = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = 0.95; window.speechSynthesis.speak(u); } };
 
+  // Tiny synthesized sound effects — no external audio files, so nothing to license or host.
+  const getAudioCtx = () => {
+    if (!audioCtxRef.current) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtxRef.current = new AC();
+    }
+    return audioCtxRef.current;
+  };
+  const playTone = (ctx, freq, startTime, duration, gainPeak = 0.16) => {
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(gainPeak, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc.start(startTime); osc.stop(startTime + duration + 0.02);
+  };
+  const playCorrectSound = () => {
+    const ctx = getAudioCtx(); if (!ctx) return;
+    const now = ctx.currentTime;
+    playTone(ctx, 587.33, now, 0.14);        // D5
+    playTone(ctx, 880.00, now + 0.09, 0.18); // A5 — quick cheerful two-note rise
+  };
+  const playIncorrectSound = () => {
+    const ctx = getAudioCtx(); if (!ctx) return;
+    playTone(ctx, 220, ctx.currentTime, 0.22, 0.11); // single soft low tone — gentle, not a buzzer
+  };
+
   const lev = (a, b) => { const m = [...Array(a.length + 1)].map((_, i) => [i, ...Array(b.length).fill(0)]); for (let j = 0; j <= b.length; j++) m[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i-1][j]+1, m[i][j-1]+1, m[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return m[a.length][b.length]; };
 
-  const listen = (target, cb) => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { setHeard('Mic not available — use "Can\'t use the mic?" below'); setMatchResult('try'); return; }
-    const rec = new SR(); rec.lang = 'es-CO'; rec.interimResults = false; rec.maxAlternatives = 3;
-    setListening(true); setHeard(''); setMatchResult(null);
-    rec.onresult = (e) => {
-      const said = e.results[0][0].transcript; setHeard(said);
-      const norm = (s) => s.toLowerCase().replace(/[^a-záéíóúñü ]/g, '').trim();
-      const a = norm(said), b = norm(target);
-      const ok = a === b || lev(a, b) <= 1; const close = a.includes(b) || b.includes(a) || lev(a, b) <= 3;
-      setMatchResult(ok ? 'good' : close ? 'close' : 'try'); cb && cb(ok || close);
-    };
-    rec.onerror = () => { setListening(false); setHeard('Didn\'t catch that — tap to retry'); };
-    rec.onend = () => setListening(false);
-    rec.start();
-  };
-  const skipVoice = (cb) => { setHeard('(skipped — typed/attempted silently)'); setMatchResult('good'); cb && cb(true); };
-
-  const toggleRecord = async () => {
-    if (recording) { mediaRecorderRef.current && mediaRecorderRef.current.stop(); setRecording(false); return; }
+  const startBackgroundRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream);
       chunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => { const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' }); setRecordedUrl(URL.createObjectURL(blob)); stream.getTracks().forEach(t => t.stop()); };
-      mediaRecorderRef.current = mr; mr.start(); setRecording(true);
-    } catch (e) { setHeard('Microphone permission needed to record'); }
+      mediaRecorderRef.current = mr; mr.start();
+    } catch (e) { /* mic permission denied or unsupported — speech recognition can still proceed without it */ }
   };
+  const stopBackgroundRecording = () => { if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop(); };
+
+  const listen = (target, cb) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setHeard('Mic not available — use "Can\'t use the mic?" below'); setMatchResult('try'); return; }
+    const rec = new SR(); rec.lang = 'es-CO'; rec.interimResults = false; rec.maxAlternatives = 3;
+    setListening(true); setHeard(''); setMatchResult(null); setRecordedUrl(null);
+    startBackgroundRecording();
+    rec.onresult = (e) => {
+      const said = e.results[0][0].transcript; setHeard(said);
+      const norm = (s) => s.toLowerCase().replace(/[^a-záéíóúñü ]/g, '').trim();
+      const a = norm(said), b = norm(target);
+      const ok = a === b || lev(a, b) <= 1; const close = a.includes(b) || b.includes(a) || lev(a, b) <= 3;
+      const result = ok ? 'good' : close ? 'close' : 'try';
+      setMatchResult(result);
+      if (result === 'try') playIncorrectSound(); else playCorrectSound();
+      cb && cb(ok || close);
+    };
+    rec.onerror = () => { setListening(false); setHeard('Didn\'t catch that — tap to retry'); stopBackgroundRecording(); };
+    rec.onend = () => { setListening(false); stopBackgroundRecording(); };
+    rec.start();
+  };
+  const skipVoice = (cb) => { setHeard('(skipped — typed/attempted silently)'); setMatchResult('good'); cb && cb(true); };
+
   const playRecording = () => { if (!recordedUrl) return; const audio = new Audio(recordedUrl); audio.play().catch(() => setHeard('Couldn\'t play that recording — try recording again')); };
-  const resetRecording = () => { setRecording(false); setRecordedUrl(null); };
+  const resetRecording = () => { setRecordedUrl(null); };
 
   const listenForCreate = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -554,19 +688,19 @@ export default function Camino() {
     if (!createInput.trim() || creating) return;
     setCreating(true); setCreateError(''); setCorrectedFrom(null);
     const typed = createInput.trim();
-    const prompt = `You are a Colombian Spanish tutor. A beginner with imperfect spelling typed this from a real chat with their Colombian friend: "${typed}"
-FIRST correct misspellings to what they most likely meant (Colombian context). THEN build a mini-lesson around the corrected term plus 3-5 related words.
-Respond ONLY valid JSON (no markdown): {"understood":"corrected term","title":"short English title","emoji":"one emoji","summary":"one warm English sentence","cards":[{"es":"Spanish","en":"English","hook":"tip","note":"note or empty"}]}
-Colombian Spanish; beginner-friendly; 4-6 cards.`;
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }) });
-      const data = await res.json();
-      const lesson = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim());
+      const res = await fetch('/.netlify/functions/generate-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typed }),
+      });
+      const lesson = await res.json();
+      if (!res.ok) throw new Error(lesson.error || 'Server error');
       const newLesson = { id: `custom-${Date.now()}`, name: lesson.title, emoji: lesson.emoji || '✨', summary: lesson.summary || '', es: lesson.title, xp: 30, custom: true, cards: lesson.cards.map(c => ({ ...c, note: c.note || '' })) };
       setCustomLessons(prev => [newLesson, ...prev]);
       if (lesson.understood && lesson.understood.toLowerCase().trim() !== typed.toLowerCase()) setCorrectedFrom({ typed, understood: lesson.understood });
       setCreateInput(''); startCustomLesson(newLesson);
-    } catch (e) { setCreateError('That didn\'t work right now. Try rephrasing, or use Notes below to save it for later.'); }
+    } catch (e) { setCreateError(`Couldn't build that lesson (${e.message}). Try rephrasing, or use Notes below to save it for later.`); }
     setCreating(false);
   };
 
@@ -575,7 +709,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
   const startBridge = (b) => { setActiveBridge(b); setBridgeStage('teach'); setQuizIdx(0); setQuizRevealed(false); setBdRevealed(false); setBdCheckRevealed(false); setSessionXp(0); setView('bridge'); };
   const startExam = () => { setExamIdx(0); setExamScore(0); setExamAnswered(null); setHeard(''); setMatchResult(null); setView('exam'); };
   const startDialogue = (d) => {
-    setActiveDialogue(d); setDlgIdx(0); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); setRevealedEn({});
+    setActiveDialogue(d); setDlgIdx(0); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); setRevealedEn({}); setGlueActive(null);
     setView('dialogue');
     if (d.steps[0].from === 'them') { setThemTyping(true); setTimeout(() => { setThemTyping(false); speak(d.steps[0].es); }, 700); }
   };
@@ -607,7 +741,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
   const advanceDialogue = () => {
     const d = activeDialogue;
     if (dlgIdx < d.steps.length - 1) {
-      const ni = dlgIdx + 1; setDlgIdx(ni); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording();
+      const ni = dlgIdx + 1; setDlgIdx(ni); setDlgRevealed(false); setHeard(''); setMatchResult(null); resetRecording(); setGlueActive(null);
       if (d.steps[ni].from === 'them') { setThemTyping(true); setTimeout(() => { setThemTyping(false); speak(d.steps[ni].es); }, 700); }
     } else {
       const gain = 25; const newXp = stats.xp + gain;
@@ -687,6 +821,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     const isMatch = firstCard.itemEs === card.itemEs && idx !== matchFirst;
     setMatchCards(prev => prev.map((c, i) => i === idx ? { ...c, flipped: true } : c));
     setMatchBusy(true);
+    isMatch ? playCorrectSound() : playIncorrectSound();
     setTimeout(() => {
       if (isMatch) {
         updateReviewBox(card.itemEs, true);
@@ -774,6 +909,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
     const examUnlocked = stats.completedLessons.length >= 3;
     const examDone = certificates.some(c => c.id === EXAM.title);
     const isReturning = stats.completedLessons.length > 0;
+    const dueCount = reviewItems.filter(it => it.nextDue <= new Date().toISOString().slice(0, 10)).length;
     return (
       <div className="min-h-screen relative" style={{ fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={CREAM} circle={LIME} />
@@ -781,7 +917,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
           <TopBar />
 
           {tab === 'learn' && (
-            <div className="px-5">
+            <div key="learn" className="px-5 anim-card-rise">
               <div className="relative w-full rounded-2xl mb-4 overflow-hidden" style={{ minHeight: 200, background: G.hero }}>
                 <div className="absolute top-4 right-4"><Camilo mood={isReturning ? 'happy' : 'wave'} size={56} /></div>
                 <div className="relative p-6 flex flex-col justify-end" style={{ minHeight: 200 }}>
@@ -797,19 +933,21 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
               <ConvoCard />
 
-              {(() => { const dueCount = reviewItems.filter(it => it.nextDue <= new Date().toISOString().slice(0, 10)).length; return dueCount > 0 && (
-                <button onClick={startReview} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#F1F8E4' }}>🔁</div>
-                  <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Repaso — {dueCount} word{dueCount === 1 ? '' : 's'} ready</div><div className="text-xs" style={{ color: '#8A8478' }}>Spaced review — the single best way to make it stick.</div></div>
+              <div className="flex items-center gap-2 mb-2.5 px-1"><h2 className="text-base font-black tracking-tight" style={{ color: INK }}>Up next</h2></div>
+              <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
+                {dueCount > 0 && (
+                  <button onClick={startReview} className="w-full p-4 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ borderBottom: '1px solid #F3ECE0' }}>
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#F1F8E4' }}>🔁</div>
+                    <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Repaso — {dueCount} word{dueCount === 1 ? '' : 's'} ready</div><div className="text-xs" style={{ color: '#8A8478' }}>Spaced review — the single best way to make it stick.</div></div>
+                    <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
+                  </button>
+                )}
+                <button onClick={() => { const pool = DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours); startDialogue(pool[Math.floor(Math.random() * pool.length)]); }} className="w-full p-4 text-left active:scale-[0.98] transition-all flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#FFEDE5' }}>👋</div>
+                  <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Practice a conversation</div><div className="text-xs" style={{ color: '#8A8478' }}>{DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours).length} of {DIALOGUES.length} unlocked — more open as you learn</div></div>
                   <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
                 </button>
-              ); })()}
-
-              <button onClick={() => { const pool = DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours); startDialogue(pool[Math.floor(Math.random() * pool.length)]); }} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#fff', border: `1.5px solid ${CORAL}50` }}>
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#FFEDE5' }}>👋</div>
-                <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Practice a conversation</div><div className="text-xs" style={{ color: '#8A8478' }}>{DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours).length} of {DIALOGUES.length} unlocked — more open as you learn</div></div>
-                <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
-              </button>
+              </div>
 
               {examUnlocked && !examDone ? (
                 <button onClick={startExam} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all" style={{ background: G.warm }}>
@@ -832,12 +970,19 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 </button>
               ); })}</div>
 
+              <p className="text-[11px] font-bold mb-2 px-1" style={{ color: '#A89F8E' }}>Explore</p>
+              <button onClick={() => setView('glue')} className="w-full rounded-xl py-3 px-4 mb-6 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#F8F5FF' }}>
+                <span className="text-base flex-shrink-0">🧩</span>
+                <div className="flex-1"><div className="font-bold text-sm" style={{ color: '#5B4A8A' }}>Connecting words</div><div className="text-[11px]" style={{ color: '#8A7FA8' }}>mi, tus, le, porque — the little words that hold sentences together</div></div>
+                <ChevronRight size={15} style={{ color: '#B5A8D6' }} />
+              </button>
+
               {certificates.length > 0 && (<div className="mb-2"><div className="flex items-center gap-2 mb-3 px-1"><Award size={15} style={{ color: LIME_DK }} /><h2 className="text-base font-black" style={{ color: INK }}>Your certificates</h2></div>{certificates.map(c => (<div key={c.id} className="rounded-2xl p-4 flex items-center gap-3 mb-2" style={{ background: '#F1F8E4', border: `1px solid ${LIME}` }}><Award size={24} style={{ color: LIME_DK }} /><div><div className="font-bold text-sm" style={{ color: INK }}>{c.id}</div><div className="text-[11px]" style={{ color: '#8A8478' }}>Passed {c.date} · {c.score}/{EXAM.questions.length}</div></div></div>))}</div>)}
             </div>
           )}
 
           {tab === 'create' && (
-            <div className="px-5">
+            <div key="create" className="px-5 anim-card-rise">
               <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="think" size={52} /><div><div className="font-black" style={{ color: INK }}>Tell me what you heard</div><div className="text-xs" style={{ color: '#8A8478' }}>I'll turn it into a lesson — spelling and all.</div></div></div>
               <div className="rounded-2xl p-5 mb-5" style={{ background: '#fff', border: `1.5px solid ${LIME}60` }}>
                 <div className="relative"><textarea value={createInput} onChange={(e) => setCreateInput(e.target.value)} placeholder="e.g. bandeja paisa, or 'how do I say I'm tired?'" rows={3} className="w-full rounded-2xl p-4 pr-12 text-sm resize-none outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={listenForCreate} className="absolute right-3 top-3 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: createListening ? '#FFE0D6' : '#F1F8E4' }}><Mic size={18} className={createListening ? 'animate-pulse' : ''} style={{ color: createListening ? CORAL : LIME_DK }} /></button></div>
@@ -873,7 +1018,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
           )}
 
           {tab === 'watch' && (
-            <div className="px-5">
+            <div key="watch" className="px-5 anim-card-rise">
               <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="happy" size={52} /><div><div className="font-black" style={{ color: INK }}>Watch & absorb</div><div className="text-xs" style={{ color: '#8A8478' }}>Aim for ~90%. Let the rest wash over you.</div></div></div>
               <div className="space-y-3">{VIDEO_TIERS.map(t => { const unlocked = stats.level >= t.minLevel; const bg = t.minLevel === 1 ? '#7FB22E' : t.minLevel === 3 ? '#4FA3E0' : '#F2823C'; return (
                 <div key={t.tier} onClick={() => { if (unlocked) window.open(t.url, '_blank'); }} role="button" className={`rounded-xl p-4 flex items-center gap-3 ${unlocked ? 'cursor-pointer active:scale-[0.98]' : 'opacity-60'}`} style={{ background: bg }}>
@@ -895,7 +1040,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
           )}
 
           {tab === 'worlds' && (
-            <div className="px-5">
+            <div key="worlds" className="px-5 anim-card-rise">
               <div className="flex items-center gap-2 mb-1"><BookOpen size={18} style={{ color: LIME_DK }} /><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>Foundations</h2><span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F1F8E4', color: LIME_DK }}>Your base</span></div>
               <p className="text-xs mb-4" style={{ color: '#8A8478' }}>Work through these in order — your core. Everything else builds on it.</p>
               {(() => {
@@ -965,19 +1110,22 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
           <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Your progress</h1></div>
           <Keyframes />
           <div className="px-6 mt-4"><div className="swipe-row">
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: LIME_DK }}>{stats.level}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: INK }}>{stats.xp}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>TOTAL XP</div></div>
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl flex items-center justify-center gap-1" style={{ color: INK }}>{stats.streak}<Flame size={14} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl" style={{ color: '#4FA3E0' }}>{(inputMinutes / 60).toFixed(1)}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>INPUT HRS</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: LIME_DK }}>{stats.level}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: INK }}>{stats.xp}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>TOTAL XP</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl flex items-center justify-center gap-1 anim-count" style={{ color: INK }}>{stats.streak}<Flame size={14} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: '#4FA3E0' }}>{(inputMinutes / 60).toFixed(1)}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>INPUT HRS</div></div>
           </div></div>
           <div className="px-6 mt-6 space-y-4">{rows.map(r => (
-            <div key={r.label}><div className="flex justify-between text-sm mb-1"><span className="font-bold" style={{ color: INK }}>{r.label}</span><span className="font-bold" style={{ color: r.color }}>{r.val}</span></div><div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${r.pct}%`, background: r.color }} /></div></div>
+            <div key={r.label}><div className="flex justify-between text-sm mb-1"><span className="font-bold" style={{ color: INK }}>{r.label}</span><span className="font-bold" style={{ color: r.color }}>{r.val}</span></div><div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${progressBarsReady ? r.pct : 0}%`, background: r.color }} /></div></div>
           ))}</div>
 
           <div className="px-6 mt-6">
             <h2 className="text-sm font-black mb-2" style={{ color: INK }}>Input hours over time</h2>
             {hoursSeries.length < 2 ? (
-              <div className="rounded-2xl p-4 text-center" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Log a few Watch & Absorb sessions to see your trend build here.</p></div>
+              <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}>
+                <p className="text-sm mb-3" style={{ color: '#8A8478' }}>{inputMinutes === 0 ? "You haven't logged any Watch & Absorb time yet — this chart tracks that separately from lesson XP." : "Almost there — log on one more day and your trend line appears here."}</p>
+                <button onClick={() => { setTab('watch'); setView('tabs'); }} className="px-4 py-2 rounded-xl font-bold text-sm text-white" style={{ background: LIME_DK }}>Go log some watch time →</button>
+              </div>
             ) : (<>
               <div className="rounded-2xl p-2" style={{ background: '#fff', border: '1px solid #EFE6D8', height: 190 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -996,6 +1144,35 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
           {certificates.length > 0 && (<div className="px-6 mt-6"><h2 className="text-sm font-black mb-2" style={{ color: INK }}>Certificates</h2>{certificates.map(c => (<div key={c.id} className="rounded-xl p-3 flex items-center gap-2 mb-2" style={{ background: '#F1F8E4' }}><Award size={18} style={{ color: LIME_DK }} /><span className="text-sm font-bold" style={{ color: INK }}>{c.id}</span></div>))}</div>)}
           <div className="px-6 mt-6"><Camilo mood="proud" size={70} /><p className="text-sm mt-2" style={{ color: '#8A8478' }}>Every bar here moves because you showed up. That's the whole game.</p></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'glue') {
+    return (
+      <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+        <div className="max-w-md mx-auto pb-10">
+          <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Connecting Words</h1></div>
+          <p className="px-6 mt-2 text-sm" style={{ color: '#8A8478' }}>The small words that hold a sentence together. Vocabulary gets you started — these are what make it sound like real Spanish. Come back here any time.</p>
+          <div className="px-6 mt-5 space-y-4">
+            {GLUE_CATEGORIES.map((cat, ci) => (
+              <div key={cat.title} className="rounded-2xl p-4" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
+                <div className="flex items-center gap-2 mb-1"><span className="text-lg">{cat.emoji}</span><div className="font-black text-sm" style={{ color: INK }}>{cat.title}</div><span className="text-[10px] font-bold ml-auto" style={{ color: '#A89F8E' }}>{cat.es}</span></div>
+                {cat.note && <p className="text-xs mb-3" style={{ color: '#6E675B' }}>{cat.note}</p>}
+                <div className="grid grid-cols-2 gap-2">
+                  {cat.items.map(item => (
+                    <div key={item.term} className="rounded-xl px-3 py-2" style={{ background: '#FBF7EF' }}>
+                      <div className="flex items-center gap-1.5"><span className="font-black text-sm" style={{ color: LIME_DK }}>{item.term}</span><button onClick={() => speak(item.term)} className="flex-shrink-0"><Volume2 size={11} style={{ color: '#C2B8A8' }} /></button></div>
+                      <div className="text-[11px] mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div>
+                    </div>
+                  ))}
+                </div>
+                {cat.extra && <p className="text-[11px] mt-3 pt-3" style={{ color: '#8A8478', borderTop: '1px solid #F0E9DA' }}>{cat.extra}</p>}
+              </div>
+            ))}
+          </div>
+          <div className="px-6 mt-5"><p className="text-[11px]" style={{ color: '#B5AB9A' }}>💡 You'll also see these words underlined inside Conversation practice — tap any underlined word there for a quick reminder.</p></div>
         </div>
       </div>
     );
@@ -1040,6 +1217,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
             if (!item) return null;
             const onTapOption = (opt) => {
               const correct = opt === item.correctText;
+              correct ? playCorrectSound() : playIncorrectSound();
               updateReviewBox(item.es, correct);
               setTapAnswered({ opt, correct });
               setTimeout(() => { setTapAnswered(null); if (reviewIdx < tapQueue.length - 1) setReviewIdx(reviewIdx + 1); else finishReviewSession(tapQueue); }, 900);
@@ -1088,13 +1266,14 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
             {threadSteps.map((s, idx) => {
               const isThem = s.from === 'them'; const faded = idx < dlgIdx; const revealed = !!revealedEn[idx];
               return (
-                <div key={idx} className={`flex ${isThem ? 'justify-start' : 'justify-end'} mb-3`} style={{ opacity: faded ? 0.42 : 1, transition: 'opacity 0.35s' }}>
+                <div key={idx} className={`flex ${isThem ? 'justify-start' : 'justify-end'} mb-3 anim-card-rise`} style={{ opacity: faded ? 0.42 : 1, transition: 'opacity 0.35s' }}>
                   {isThem && <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 self-end mb-1" style={{ background: '#F3ECE0' }}>🇨🇴</div>}
                   <div style={{ maxWidth: '78%' }}>
                     <div className="rounded-2xl px-4 py-2.5" style={{ background: isThem ? '#fff' : LIME_DK, border: isThem ? '1px solid #EFE6D8' : 'none', borderBottomLeftRadius: isThem ? 6 : 18, borderBottomRightRadius: isThem ? 18 : 6 }}>
-                      <div className="flex items-center gap-2"><span className="font-bold" style={{ color: isThem ? INK : '#fff', fontSize: 16 }}>{s.es}</span><button onClick={() => speak(s.es)} className="flex-shrink-0"><Volume2 size={13} style={{ color: isThem ? LIME_DK : '#fff', opacity: 0.85 }} /></button></div>
+                      <div className="flex items-center gap-2"><span className="font-bold" style={{ color: isThem ? INK : '#fff', fontSize: 16 }}><TappableEs text={s.es} sentenceKey={`dlg-${idx}`} activeKey={glueActive?.key} onTap={setGlueActive} color={isThem ? LIME_DK : 'rgba(255,255,255,0.7)'} /></span><button onClick={() => speak(s.es)} className="flex-shrink-0"><Volume2 size={13} style={{ color: isThem ? LIME_DK : '#fff', opacity: 0.85 }} /></button></div>
                     </div>
                     <button onClick={() => setRevealedEn(prev => ({ ...prev, [idx]: !prev[idx] }))} className="text-[10px] font-medium mt-1 block" style={{ color: '#B5AB9A', textAlign: isThem ? 'left' : 'right', width: '100%' }}>{revealed ? s.en : '🇬🇧 Show translation'}</button>
+                    {glueActive?.key?.startsWith(`dlg-${idx}-`) && <GlueExplain active={glueActive} />}
                   </div>
                 </div>
               );
@@ -1108,11 +1287,19 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
               <div className="rounded-3xl p-5" style={{ background: '#fff', border: `1.5px solid ${CORAL}60` }}>
                 <div className="text-[10px] font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
                 {!dlgRevealed ? (<button onClick={() => setDlgRevealed(true)} className="text-sm font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>) : (<>
-                  <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}>{step.es}</div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
-                  <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-[11px] font-medium mb-4 block" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
+                  <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}><TappableEs text={step.es} sentenceKey={`dlg-you-${dlgIdx}`} activeKey={glueActive?.key} onTap={setGlueActive} /></div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
+                  {glueActive?.key?.startsWith(`dlg-you-${dlgIdx}-`) && <GlueExplain active={glueActive} />}
+                  <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-[11px] font-medium mb-4 block mt-1" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
                   <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it out loud'}</button>
-                  {heard && <div className="text-xs text-center mb-2" style={{ color: matchResult === 'good' ? LIME_DK : '#A89F8E' }}>{heard}</div>}
-                  <RecordPlayback recording={recording} recordedUrl={recordedUrl} onToggle={toggleRecord} onPlay={playRecording} />
+                  {heard && (
+                    <div className="rounded-2xl p-3 text-center mb-2 anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}>
+                      <div className="font-bold text-sm" style={{ color: INK }}>{heard}</div>
+                      {matchResult === 'good' && <div className="text-xs font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)}</div>}
+                      {matchResult === 'close' && <div className="text-xs font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}
+                      {matchResult === 'try' && <div className="text-xs font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}
+                    </div>
+                  )}
+                  <RecordPlayback recordedUrl={recordedUrl} onPlay={playRecording} />
                 </>)}
               </div>
             </div>
@@ -1129,7 +1316,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
   if (view === 'exam') {
     const q = EXAM.questions[examIdx];
-    const onAnswer = (correct, choice) => { setExamAnswered(choice ?? 'spoken'); if (correct) setExamScore(s => s + 1); };
+    const onAnswer = (correct, choice) => { setExamAnswered(choice ?? 'spoken'); if (correct) setExamScore(s => s + 1); if (choice !== 'spoken') { correct ? playCorrectSound() : playIncorrectSound(); } };
     const nextExam = () => { setExamAnswered(null); setHeard(''); setMatchResult(null); if (examIdx < EXAM.questions.length - 1) setExamIdx(examIdx + 1); else { const passed = examScore >= EXAM.passMark; setExamPassed(passed); if (passed) setCertificates(prev => prev.some(c => c.id === EXAM.title) ? prev : [...prev, { id: EXAM.title, date: new Date().toLocaleDateString(), score: examScore }]); setView('examResult'); } };
     return (
       <div className="min-h-screen flex flex-col relative" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
@@ -1297,7 +1484,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
                 <button onClick={() => listen(card.es)} disabled={listening} className="w-full rounded-2xl py-4 flex items-center justify-center gap-3 font-bold text-white transition-all active:scale-[0.98]" style={{ background: listening ? '#C2B8A8' : `linear-gradient(135deg, ${activeWorld.g1}, ${activeWorld.g2})` }}><Mic size={22} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Tap & say it out loud'}</button>
                 {!heard && <SkipVoice onSkip={() => skipVoice()} />}
                 {heard && <div className="rounded-2xl p-3 text-center anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}><div className="font-bold text-sm" style={{ color: INK }}>{heard}</div>{matchResult === 'good' && <div className="text-xs font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)} +5 XP</div>}{matchResult === 'close' && <div className="text-xs font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}{matchResult === 'try' && <div className="text-xs font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}</div>}
-                <RecordPlayback recording={recording} recordedUrl={recordedUrl} onToggle={toggleRecord} onPlay={playRecording} />
+                <RecordPlayback recordedUrl={recordedUrl} onPlay={playRecording} />
               </div>
             )}
           </div>
@@ -1309,6 +1496,7 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
 
   if (view === 'complete') {
     const d = daysUntil(convoDate);
+    const sessionMinutes = Math.round((Date.now() - sessionStartRef.current) / 60000);
     return (
       <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={G.dusk} circle="#ffffff" />
@@ -1317,6 +1505,11 @@ Colombian Spanish; beginner-friendly; 4-6 cards.`;
             <div className="mx-auto mb-1 flex justify-center"><Camilo mood="proud" size={100} /></div>
             <h1 className="text-3xl font-black tracking-tight mb-1" style={{ color: INK }}>¡Lo lograste, Luke!</h1>
             <p className="mb-5" style={{ color: '#8A8478' }}>You're a little more fluent than 2 minutes ago.</p>
+            {sessionMinutes >= 20 && (
+              <div className="rounded-2xl p-3 mb-4 text-left" style={{ background: SKY }}>
+                <p className="text-xs" style={{ color: '#4A6E8A' }}>⏱️ You've been at this for about {sessionMinutes} minutes — solid session. Keep going if you're in the zone, or this is a good place to leave it for today.</p>
+              </div>
+            )}
             {correctedFrom && <div className="rounded-2xl p-3 mb-4 text-left" style={{ background: '#F1F8E4', border: `1px solid ${LIME}` }}><p className="text-xs" style={{ color: '#6E675B' }}>You typed "<span style={{ color: INK }}>{correctedFrom.typed}</span>" — built for <span className="font-bold" style={{ color: LIME_DK }}>{correctedFrom.understood}</span>.</p></div>}
             {convoDate && d !== null && d >= 0 ? (
               <div className="rounded-2xl p-4 mb-6" style={{ background: SKY, border: `1px solid ${LIME}40` }}><div className="text-xs mb-1" style={{ color: '#6E675B' }}>Prep for your conversation</div><div className="font-black text-lg" style={{ color: INK }}>{d} {d === 1 ? 'day' : 'days'} to go {convoName && `with ${convoName}`} 🇨🇴</div></div>
