@@ -1170,7 +1170,7 @@ export default function Camino() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
-        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="px-6 pt-7 flex items-center gap-3 flex-shrink-0">
             <button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button>
             <h1 key={glueIdx} className="text-xl font-black anim-card-rise" style={{ color: INK }}>{cat.emoji} {cat.title}</h1>
@@ -1282,7 +1282,7 @@ export default function Camino() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
-        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
           <div className="px-6 pt-3 pb-1 flex items-center gap-2 flex-shrink-0"><Users size={15} style={{ color: CORAL }} /><span className="text-[11px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
 
