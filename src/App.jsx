@@ -426,6 +426,8 @@ const Keyframes = () => (<style>{`
   .swipe-row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
   .swipe-row::-webkit-scrollbar { display: none; }
   .swipe-card { scroll-snap-align: start; flex: 0 0 auto; }
+  .glue-pager { scrollbar-width: none; }
+  .glue-pager::-webkit-scrollbar { display: none; }
 `}</style>);
 
 const PageArc = ({ base = CREAM, circle = LIME }) => (
@@ -500,7 +502,8 @@ export default function Camino() {
   const [dlgRevealed, setDlgRevealed] = useState(false);
   const [revealedEn, setRevealedEn] = useState({});
   const [glueActive, setGlueActive] = useState(null);
-  const [activeGlueCategory, setActiveGlueCategory] = useState(null);
+  const [glueIdx, setGlueIdx] = useState(0);
+  const glueScrollRef = useRef(null);
   const [themTyping, setThemTyping] = useState(false);
   const threadEndRef = useRef(null);
 
@@ -641,6 +644,18 @@ export default function Camino() {
     rec.start();
   };
   const skipVoice = (cb) => { setHeard('(skipped — typed/attempted silently)'); setMatchResult('good'); cb && cb(true); };
+
+  const onGlueScroll = () => {
+    const el = glueScrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== glueIdx && idx >= 0 && idx < GLUE_CATEGORIES.length) setGlueIdx(idx);
+  };
+  const jumpToGlue = (i) => {
+    const el = glueScrollRef.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
+    setGlueIdx(i);
+  };
 
   const playRecording = () => { if (!recordedUrl) return; const audio = new Audio(recordedUrl); audio.play().catch(() => setHeard('Couldn\'t play that recording — try recording again')); };
   const resetRecording = () => { setRecordedUrl(null); };
@@ -878,10 +893,10 @@ export default function Camino() {
   const TabBar = () => {
     const tabs = [{ id: 'learn', label: 'Learn', es: 'Aprender', icon: GraduationCap }, { id: 'create', label: 'Create', es: 'Crear', icon: Wand2 }, { id: 'watch', label: 'Watch', es: 'Ver', icon: Film }, { id: 'worlds', label: 'Worlds', es: 'Mundos', icon: Globe }];
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid #EFE6D8', paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid #EFE6D8', paddingBottom: 'max(4px, env(safe-area-inset-bottom))' }}>
         <div className="max-w-md mx-auto flex">
           {tabs.map(t => { const Icon = t.icon; const active = tab === t.id; return (
-            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-3"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-[11px] font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
+            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-2"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-xs font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
           ); })}
         </div>
       </div>
@@ -912,7 +927,7 @@ export default function Camino() {
     const isReturning = stats.completedLessons.length > 0;
     const dueCount = reviewItems.filter(it => it.nextDue <= new Date().toISOString().slice(0, 10)).length;
     return (
-      <div className="min-h-screen relative" style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen relative" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={CREAM} circle={LIME} />
         <div className="max-w-md mx-auto pb-32 relative">
           <TopBar />
@@ -972,7 +987,7 @@ export default function Camino() {
               ); })}</div>
 
               <p className="text-xs font-bold mb-2 px-1" style={{ color: '#A89F8E' }}>Explore</p>
-              <button onClick={() => { setActiveGlueCategory(null); setView('glue'); }} className="w-full rounded-xl py-3 px-4 mb-6 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#F8F5FF' }}>
+              <button onClick={() => { setGlueIdx(0); setView('glue'); }} className="w-full rounded-xl py-3 px-4 mb-6 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#F8F5FF' }}>
                 <span className="text-lg flex-shrink-0">🧩</span>
                 <div className="flex-1"><div className="font-bold text-base" style={{ color: '#5B4A8A' }}>Connecting words</div><div className="text-xs" style={{ color: '#8A7FA8' }}>mi, tus, le, porque — the little words that hold sentences together</div></div>
                 <ChevronRight size={15} style={{ color: '#B5A8D6' }} />
@@ -1020,36 +1035,36 @@ export default function Camino() {
 
           {tab === 'watch' && (
             <div key="watch" className="px-5 anim-card-rise">
-              <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="happy" size={52} /><div><div className="font-black" style={{ color: INK }}>Watch & absorb</div><div className="text-sm" style={{ color: '#8A8478' }}>Aim for ~90%. Let the rest wash over you.</div></div></div>
-              <div className="space-y-3">{VIDEO_TIERS.map(t => { const unlocked = stats.level >= t.minLevel; const bg = t.minLevel === 1 ? '#7FB22E' : t.minLevel === 3 ? '#4FA3E0' : '#F2823C'; return (
-                <div key={t.tier} onClick={() => { if (unlocked) window.open(t.url, '_blank'); }} role="button" className={`rounded-xl p-4 flex items-center gap-3 ${unlocked ? 'cursor-pointer active:scale-[0.98]' : 'opacity-60'}`} style={{ background: bg }}>
+              <div className="flex items-center gap-3 mb-5 px-1"><Camilo mood="happy" size={52} /><div><div className="font-black" style={{ color: INK }}>Watch & absorb</div><div className="text-sm" style={{ color: '#8A8478' }}>Aim for ~90%. Let the rest wash over you.</div></div></div>
+              <div className="space-y-4">{VIDEO_TIERS.map(t => { const unlocked = stats.level >= t.minLevel; const bg = t.minLevel === 1 ? '#7FB22E' : t.minLevel === 3 ? '#4FA3E0' : '#F2823C'; return (
+                <div key={t.tier} onClick={() => { if (unlocked) window.open(t.url, '_blank'); }} role="button" className={`rounded-2xl p-5 flex items-center gap-3 ${unlocked ? 'cursor-pointer active:scale-[0.98]' : 'opacity-60'}`} style={{ background: bg }}>
                   <div className="w-11 h-11 rounded-xl bg-white/25 flex items-center justify-center text-xl flex-shrink-0">{t.emoji}</div>
-                  <div className="flex-1"><div className="flex items-center gap-2"><div className="text-white font-bold text-base">{t.tier}</div>{!unlocked && <span className="text-[10px] font-bold text-white/80 bg-white/20 px-2 py-0.5 rounded-full">Lv {t.minLevel}+</span>}</div><div className="text-white/80 text-xs">{t.desc}</div><div className="text-white/60 text-[11px] mt-0.5">app.dreaming.com · filtered to this level</div></div>
+                  <div className="flex-1"><div className="flex items-center gap-2 mb-1.5"><div className="text-white font-bold text-base">{t.tier}</div>{!unlocked && <span className="text-[11px] font-bold text-white/80 bg-white/20 px-2 py-0.5 rounded-full">Lv {t.minLevel}+</span>}</div><div className="text-white/80 text-sm mb-1">{t.desc}</div><div className="text-white/60 text-xs">app.dreaming.com · filtered to this level</div></div>
                   {unlocked ? <Play size={18} className="text-white" /> : <Lock size={16} className="text-white/70" />}
                 </div>
               ); })}</div>
-              <div className="mt-5 rounded-2xl p-4" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
-                <div className="flex items-center justify-between mb-3"><div className="font-black text-base" style={{ color: INK }}>Log what you watched</div><div key={inputMinutes} className="text-sm font-bold anim-glow" style={{ color: LIME_DK }}>{(inputMinutes / 60).toFixed(1)}h total</div></div>
-                <div className="grid grid-cols-4 gap-2">{[5, 10, 15, 30].map(m => { const isJust = justLogged === m; return (
-                  <button key={m} onClick={() => logInput(m)} disabled={!!justLogged} className={`rounded-xl py-2.5 font-bold text-base flex items-center justify-center gap-1 ${isJust ? 'anim-glow' : ''}`} style={{ background: isJust ? LIME_DK : '#F1F8E4', color: isJust ? '#fff' : LIME_DK, transform: isJust ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s ease, background 0.2s ease' }}>
+              <div className="mt-6 rounded-2xl p-5" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
+                <div className="flex items-center justify-between mb-4"><div className="font-black text-base" style={{ color: INK }}>Log what you watched</div><div key={inputMinutes} className="text-sm font-bold anim-glow" style={{ color: LIME_DK }}>{(inputMinutes / 60).toFixed(1)}h total</div></div>
+                <div className="grid grid-cols-4 gap-2.5">{[5, 10, 15, 30].map(m => { const isJust = justLogged === m; return (
+                  <button key={m} onClick={() => logInput(m)} disabled={!!justLogged} className={`rounded-xl py-3 font-bold text-base flex items-center justify-center gap-1 ${isJust ? 'anim-glow' : ''}`} style={{ background: isJust ? LIME_DK : '#F1F8E4', color: isJust ? '#fff' : LIME_DK, transform: isJust ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s ease, background 0.2s ease' }}>
                     {isJust ? <><Check size={14} /> +{m}</> : `${m}m`}
                   </button>
                 ); })}</div>
               </div>
-              <div className="mt-4 rounded-2xl p-4" style={{ background: SKY, border: '1px solid #DCEBF8' }}><p className="text-sm leading-relaxed" style={{ color: '#4A6E8A' }}>💡 <span className="font-bold">Why this works:</span> watching input you mostly understand is how your brain absorbs Spanish naturally. Even 10 minutes counts.</p></div>
+              <div className="mt-5 rounded-2xl p-5" style={{ background: SKY, border: '1px solid #DCEBF8' }}><p className="text-sm leading-relaxed" style={{ color: '#4A6E8A' }}>💡 <span className="font-bold">Why this works:</span> watching input you mostly understand is how your brain absorbs Spanish naturally. Even 10 minutes counts.</p></div>
             </div>
           )}
 
           {tab === 'worlds' && (
             <div key="worlds" className="px-5 anim-card-rise">
-              <div className="flex items-center gap-2 mb-1"><BookOpen size={18} style={{ color: LIME_DK }} /><h2 className="text-xl font-black tracking-tight" style={{ color: INK }}>Foundations</h2><span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F1F8E4', color: LIME_DK }}>Your base</span></div>
-              <p className="text-sm mb-4" style={{ color: '#8A8478' }}>Work through these in order — your core. Everything else builds on it.</p>
+              <div className="flex items-center gap-2 mb-2"><BookOpen size={18} style={{ color: LIME_DK }} /><h2 className="text-xl font-black tracking-tight" style={{ color: INK }}>Foundations</h2><span className="text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F1F8E4', color: LIME_DK }}>Your base</span></div>
+              <p className="text-sm mb-5" style={{ color: '#8A8478' }}>Work through these in order — your core. Everything else builds on it.</p>
               {(() => {
                 const nextIdx = FOUNDATIONS.findIndex(u => !stats.completedLessons.includes(u.id));
                 const cutoff = nextIdx === -1 ? FOUNDATIONS.length : nextIdx + 1;
                 const hiddenCount = Math.max(0, FOUNDATIONS.length - cutoff);
                 return (
-                  <div className="space-y-2.5 mb-7">
+                  <div className="space-y-3 mb-8">
                     {FOUNDATIONS.map((unit, idx) => {
                       if (idx >= cutoff && !fndExpanded) return null;
                       const done = stats.completedLessons.includes(unit.id);
@@ -1057,20 +1072,20 @@ export default function Camino() {
                       return (
                         <button key={unit.id} disabled={locked} onClick={() => startLesson({ name: unit.name, es: unit.es, emoji: '📘', g1: LIME, g2: LIME_DK, desc: unit.desc, custom: true }, unit)} className={`w-full rounded-2xl p-4 flex items-center gap-3 text-left transition-all ${locked ? 'opacity-40' : 'active:scale-[0.98]'}`} style={{ background: '#fff', border: `1px solid ${done ? LIME : '#EFE6D8'}` }}>
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0" style={{ background: done ? LIME : locked ? '#F3ECE0' : '#F1F8E4', color: done ? '#fff' : locked ? '#C2B8A8' : LIME_DK }}>{done ? <Check size={20} /> : locked ? <Lock size={15} /> : unit.n}</div>
-                          <div className="flex-1"><div className="font-bold text-base" style={{ color: INK }}>{unit.name}</div><div className="text-xs" style={{ color: '#8A8478' }}>{unit.desc}</div></div>
-                          <div className="flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FFF3D6', color: '#C08A1E' }}><Star size={10} fill="#C08A1E" /> {unit.xp}</div>
+                          <div className="flex-1"><div className="font-bold text-base mb-0.5" style={{ color: INK }}>{unit.name}</div><div className="text-sm" style={{ color: '#8A8478' }}>{unit.desc}</div></div>
+                          <div className="flex items-center gap-1 text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FFF3D6', color: '#C08A1E' }}><Star size={10} fill="#C08A1E" /> {unit.xp}</div>
                         </button>
                       );
                     })}
-                    {hiddenCount > 0 && (<button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-base font-bold" style={{ background: '#F3ECE0', color: '#8A8478' }}><ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />{fndExpanded ? 'Show less' : `${hiddenCount} more units locked — tap to preview`}</button>)}
+                    {hiddenCount > 0 && (<button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-base font-bold" style={{ background: '#F3ECE0', color: '#A89F8E' }}><ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />{fndExpanded ? 'Show less' : `${hiddenCount} more units coming up — tap to peek`}</button>)}
                   </div>
                 );
               })()}
-              <div className="flex items-center gap-2 mb-1"><Globe size={18} style={{ color: '#8A8478' }} /><h2 className="text-xl font-black tracking-tight" style={{ color: INK }}>Themed worlds</h2><span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F3ECE0', color: '#8A8478' }}>Add-ons</span></div>
+              <div className="flex items-center gap-2 mb-2"><Globe size={18} style={{ color: '#8A8478' }} /><h2 className="text-xl font-black tracking-tight" style={{ color: INK }}>Themed worlds</h2><span className="text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F3ECE0', color: '#8A8478' }}>Add-ons</span></div>
               <p className="text-sm mb-5" style={{ color: '#8A8478' }}>Extra vocabulary rooted in your life. Dip in anytime.</p>
-              <div className="grid grid-cols-2 gap-3">{WORLDS.map((world) => { const lessons = BASE_CURRICULUM[world.id] || []; const done = lessons.filter(l => stats.completedLessons.includes(l.id)).length; return (
-                <button key={world.id} onClick={() => { setActiveWorld(world); setView('world'); }} className="rounded-2xl p-4 flex flex-col justify-between text-left active:scale-[0.97]" style={{ minHeight: 140, background: world.g2 }}>
-                  <div className="text-3xl">{world.emoji}</div><div><div className="text-white font-black text-xl leading-tight">{world.name}</div><div className="text-white/80 text-[11px]">{done}/{lessons.length} done</div></div>
+              <div className="grid grid-cols-2 gap-3.5">{WORLDS.map((world) => { const lessons = BASE_CURRICULUM[world.id] || []; const done = lessons.filter(l => stats.completedLessons.includes(l.id)).length; return (
+                <button key={world.id} onClick={() => { setActiveWorld(world); setView('world'); }} className="rounded-2xl p-5 flex flex-col justify-between text-left active:scale-[0.97]" style={{ minHeight: 155, background: world.g2 }}>
+                  <div className="text-3xl">{world.emoji}</div><div><div className="text-white font-black text-xl leading-tight mb-1">{world.name}</div><div className="text-white/80 text-xs">{done}/{lessons.length} done</div></div>
                 </button>
               ); })}</div>
             </div>
@@ -1106,7 +1121,7 @@ export default function Camino() {
     ];
     const hoursSeries = buildHoursSeries();
     return (
-      <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto pb-10">
           <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Your progress</h1></div>
           <Keyframes />
@@ -1151,42 +1166,37 @@ export default function Camino() {
   }
 
   if (view === 'glue') {
-    if (!activeGlueCategory) {
-      return (
-        <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
-          <div className="max-w-md mx-auto pb-10">
-            <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Connecting Words</h1></div>
-            <p className="px-6 mt-2 text-base" style={{ color: '#8A8478' }}>The small words that hold a sentence together. Pick one group at a time — each is short enough for a quick pass.</p>
-            <div className="px-6 mt-5 space-y-2.5">
-              {GLUE_CATEGORIES.map(cat => (
-                <button key={cat.title} onClick={() => setActiveGlueCategory(cat)} className="w-full rounded-2xl p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-all" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#F8F5FF' }}>{cat.emoji}</div>
-                  <div className="flex-1"><div className="font-black text-base" style={{ color: INK }}>{cat.title}</div><div className="text-sm" style={{ color: '#8A8478' }}>{cat.items.length} words · {cat.es}</div></div>
-                  <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
-                </button>
-              ))}
-            </div>
-            <div className="px-6 mt-5"><p className="text-sm" style={{ color: '#B5AB9A' }}>💡 You'll also see these words underlined inside Conversation practice — tap any underlined word there for a quick reminder.</p></div>
-          </div>
-        </div>
-      );
-    }
-    const cat = activeGlueCategory;
+    const cat = GLUE_CATEGORIES[glueIdx];
     return (
-      <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
-        <div className="max-w-md mx-auto pb-10">
-          <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setActiveGlueCategory(null)} style={{ color: '#A89F8E' }}><ArrowLeft size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>{cat.emoji} {cat.title}</h1></div>
-          {cat.note && <p className="px-6 mt-3 text-base leading-relaxed" style={{ color: '#6E675B' }}>{cat.note}</p>}
-          <div className="px-6 mt-5 space-y-2.5">
-            {cat.items.map(item => (
-              <div key={item.term} className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                <button onClick={() => speak(item.term)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button>
-                <div className="flex-1"><div className="font-black text-lg" style={{ color: LIME_DK }}>{item.term}</div><div className="text-sm mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div></div>
+      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+        <Keyframes />
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="px-6 pt-7 flex items-center gap-3 flex-shrink-0">
+            <button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button>
+            <h1 key={glueIdx} className="text-xl font-black anim-card-rise" style={{ color: INK }}>{cat.emoji} {cat.title}</h1>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 pt-3 pb-2 flex-shrink-0">
+            {GLUE_CATEGORIES.map((c, i) => (
+              <button key={c.title} onClick={() => jumpToGlue(i)} aria-label={c.title} style={{ width: i === glueIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === glueIdx ? LIME_DK : '#E3D9C8', transition: 'width 0.25s, background 0.25s', border: 'none', padding: 0 }} />
+            ))}
+          </div>
+          <div ref={glueScrollRef} onScroll={onGlueScroll} className="glue-pager flex-1" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+            {GLUE_CATEGORIES.map(c => (
+              <div key={c.title} style={{ flex: '0 0 100%', minWidth: '100%', scrollSnapAlign: 'start', overflowY: 'auto' }} className="px-6 pt-2 pb-4">
+                {c.note && <p className="text-base leading-relaxed mb-4" style={{ color: '#6E675B' }}>{c.note}</p>}
+                <div className="space-y-2.5">
+                  {c.items.map(item => (
+                    <div key={item.term} className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
+                      <button onClick={() => speak(item.term)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button>
+                      <div className="flex-1"><div className="font-black text-lg" style={{ color: LIME_DK }}>{item.term}</div><div className="text-sm mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div></div>
+                    </div>
+                  ))}
+                </div>
+                {c.extra && (<div className="mt-4 rounded-2xl p-4" style={{ background: SKY }}><p className="text-sm leading-relaxed" style={{ color: '#4A6E8A' }}>{c.extra}</p></div>)}
               </div>
             ))}
           </div>
-          {cat.extra && (<div className="px-6 mt-5"><div className="rounded-2xl p-4" style={{ background: SKY }}><p className="text-sm leading-relaxed" style={{ color: '#4A6E8A' }}>{cat.extra}</p></div></div>)}
-          <div className="px-6 mt-6"><button onClick={() => setActiveGlueCategory(null)} className="w-full py-3.5 rounded-2xl font-bold text-base" style={{ background: '#F3ECE0', color: INK }}>← All groups</button></div>
+          <p className="text-center text-sm pb-5 pt-1 flex-shrink-0" style={{ color: '#B5AB9A' }}>Swipe for more · {glueIdx + 1} of {GLUE_CATEGORIES.length}</p>
         </div>
       </div>
     );
@@ -1196,7 +1206,7 @@ export default function Camino() {
     const totalCount = reviewMode === 'match' ? matchItems.length : reviewMode === 'tap' ? tapQueue.length : reviewQueue.length;
     const currentCount = reviewMode === 'match' ? Math.floor(matchCards.filter(c => c.solved).length / 2) : reviewIdx;
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${totalCount ? (currentCount / totalCount) * 100 : 0}%`, background: LIME_DK }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{currentCount}/{totalCount}</span></div>
@@ -1272,7 +1282,7 @@ export default function Camino() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
-        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh' }}>
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
           <div className="px-6 pt-3 pb-1 flex items-center gap-2 flex-shrink-0"><Users size={15} style={{ color: CORAL }} /><span className="text-[11px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
 
@@ -1333,7 +1343,7 @@ export default function Camino() {
     const onAnswer = (correct, choice) => { setExamAnswered(choice ?? 'spoken'); if (correct) setExamScore(s => s + 1); if (choice !== 'spoken') { correct ? playCorrectSound() : playIncorrectSound(); } };
     const nextExam = () => { setExamAnswered(null); setHeard(''); setMatchResult(null); if (examIdx < EXAM.questions.length - 1) setExamIdx(examIdx + 1); else { const passed = examScore >= EXAM.passMark; setExamPassed(passed); if (passed) setCertificates(prev => prev.some(c => c.id === EXAM.title) ? prev : [...prev, { id: EXAM.title, date: new Date().toLocaleDateString(), score: examScore }]); setView('examResult'); } };
     return (
-      <div className="min-h-screen flex flex-col relative" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col relative" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col relative">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(examIdx / EXAM.questions.length) * 100}%`, background: CORAL }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{examIdx + 1}/{EXAM.questions.length}</span></div>
           <div className="px-6 pt-5 flex items-center gap-2"><Camilo mood="think" size={44} /><div className="inline-flex items-center gap-1.5 text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#FFE9E2', color: CORAL }}>NO HINTS — YOU'VE GOT THIS</div></div>
@@ -1357,7 +1367,7 @@ export default function Camino() {
 
   if (view === 'examResult') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={examPassed ? G.dusk : G.warm} circle="#ffffff" />
         <div className="max-w-md w-full relative anim-card-rise">
           <div className="rounded-[2.5rem] p-8 text-center" style={{ background: '#fff' }}>
@@ -1377,7 +1387,7 @@ export default function Camino() {
   if (view === 'bridge') {
     const b = activeBridge;
     if (bridgeStage === 'teach') return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>THE BRIDGE</div></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
@@ -1392,7 +1402,7 @@ export default function Camino() {
       </div>
     );
     if (bridgeStage === 'examples') return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>SHARED VS CHANGED</div></div>
           <p className="px-6 text-sm mb-3" style={{ color: '#8A8478' }}>Grey = stays the same. Bold colour = the part that actually changes.</p>
@@ -1407,7 +1417,7 @@ export default function Camino() {
       </div>
     );
     if (bridgeStage === 'breakdown') return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#FFEDE5', color: CORAL }}>PAUSE & THINK</div></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6">
@@ -1438,7 +1448,7 @@ export default function Camino() {
     );
     const q = b.quiz[quizIdx];
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(quizIdx / b.quiz.length) * 100}%`, background: LIME }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{quizIdx + 1}/{b.quiz.length}</span></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6">
@@ -1455,7 +1465,7 @@ export default function Camino() {
   if (view === 'world') {
     const lessons = BASE_CURRICULUM[activeWorld.id] || [];
     return (
-      <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto pb-10">
           <div className="relative px-6 pt-8 pb-10" style={{ background: `linear-gradient(135deg, ${activeWorld.g1} 0%, ${activeWorld.g2} 100%)` }}>
             <button onClick={() => setView('tabs')} className="relative flex items-center gap-1 text-white/90 text-base font-bold mb-6"><ArrowLeft size={18} /> Back</button>
@@ -1478,7 +1488,7 @@ export default function Camino() {
     const progress = ((cardIndex + (phase === 'say' ? 0.66 : phase === 'listen' ? 0.33 : 0)) / activeLesson.cards.length) * 100;
     const phaseInfo = { see: { label: 'STEP 1 · UNDERSTAND', tip: 'Just read and understand.' }, listen: { label: 'STEP 2 · LISTEN', tip: 'Tap the speaker. Hear it.' }, say: { label: 'STEP 3 · SAY IT', tip: 'Now say it out loud.' } }[phase];
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView(activeWorld?.custom ? 'tabs' : 'world')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${activeWorld.g1}, ${activeWorld.g2})` }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{cardIndex + 1}/{activeLesson.cards.length}</span></div>
           <div className="px-6 pt-4 flex items-center gap-3"><Camilo mood={matchResult === 'good' ? 'cheer' : phase === 'listen' ? 'listen' : 'think'} size={44} /><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: activeWorld.g1 + '25', color: activeWorld.g2 }}>{phaseInfo.label}</div></div>
@@ -1512,7 +1522,7 @@ export default function Camino() {
     const d = daysUntil(convoDate);
     const sessionMinutes = Math.round((Date.now() - sessionStartRef.current) / 60000);
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={G.dusk} circle="#ffffff" />
         <div className="max-w-md w-full relative anim-card-rise">
           <div className="rounded-[2.5rem] p-8 text-center" style={{ background: '#fff' }}>
