@@ -571,6 +571,8 @@ export default function Camino() {
     if (view === 'progress') { setProgressBarsReady(false); const t = setTimeout(() => setProgressBarsReady(true), 60); return () => clearTimeout(t); }
   }, [view]);
 
+  useEffect(() => { window.scrollTo(0, 0); }, [view, tab, bridgeStage]);
+
   useEffect(() => { threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [dlgIdx, dlgRevealed, themTyping]);
 
   const levelFromXp = (xp) => Math.floor(xp / 100) + 1;
@@ -1168,7 +1170,7 @@ export default function Camino() {
   if (view === 'glue') {
     const cat = GLUE_CATEGORIES[glueIdx];
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="px-6 pt-7 flex items-center gap-3 flex-shrink-0">
@@ -1280,7 +1282,7 @@ export default function Camino() {
     const threadUpTo = step.from === 'them' ? dlgIdx : dlgIdx - 1;
     const threadSteps = d.steps.slice(0, Math.max(threadUpTo + 1, 0));
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
