@@ -295,62 +295,62 @@ const GLUE_CATEGORIES = [
   { title: 'Subject pronouns', es: 'Pronombres', emoji: '🙋',
     note: 'In Bogotá these are often dropped — the verb ending already tells you who. "Hablo español" already means "I speak Spanish" without needing "yo."',
     items: [
-      { term: 'yo', meaning: 'I' }, { term: 'tú', meaning: 'you (friendly)' },
-      { term: 'usted', meaning: 'you (respectful — used warmly in Colombia, not just formally)' },
-      { term: 'él', meaning: 'he' }, { term: 'ella', meaning: 'she' },
-      { term: 'nosotros', meaning: 'we' }, { term: 'ellos', meaning: 'they (masc./mixed)' }, { term: 'ellas', meaning: 'they (fem.)' },
+      { term: 'yo', meaning: 'I', sound: 'yo' }, { term: 'tú', meaning: 'you (friendly)', sound: 'too' },
+      { term: 'usted', meaning: 'you (respectful — used warmly in Colombia, not just formally)', sound: 'oo-STED' },
+      { term: 'él', meaning: 'he', sound: 'el' }, { term: 'ella', meaning: 'she', sound: 'EH-ya' },
+      { term: 'nosotros', meaning: 'we', sound: 'no-SO-tros' }, { term: 'ellos', meaning: 'they (masc./mixed)', sound: 'EH-yos' }, { term: 'ellas', meaning: 'they (fem.)', sound: 'EH-yas' },
     ] },
   { title: 'My / your / their', es: 'Posesivos', emoji: '🏠',
     note: 'These change with the noun they describe, not with how much you mean it. "mis" because the next word is plural — not "more mine."',
     items: [
-      { term: 'mi', meaning: 'my (before a singular noun)' }, { term: 'mis', meaning: 'my (before a plural noun)' },
-      { term: 'tu', meaning: 'your (singular noun)' }, { term: 'tus', meaning: 'your (plural noun)' },
-      { term: 'su', meaning: "his / her / their / your (formal) — singular noun" }, { term: 'sus', meaning: "his / her / their / your (formal) — plural noun" },
+      { term: 'mi', meaning: 'my (before a singular noun)', sound: 'mee' }, { term: 'mis', meaning: 'my (before a plural noun)', sound: 'mees' },
+      { term: 'tu', meaning: 'your (singular noun)', sound: 'too' }, { term: 'tus', meaning: 'your (plural noun)', sound: 'toos' },
+      { term: 'su', meaning: "his / her / their / your (formal) — singular noun", sound: 'soo' }, { term: 'sus', meaning: "his / her / their / your (formal) — plural noun", sound: 'soos' },
     ] },
   { title: 'Me / you / it', es: 'Objetos', emoji: '👉',
     note: 'These usually come before the verb — the opposite order from English. "Lo veo" = "I see it," not "It I see."',
     items: [
-      { term: 'me', meaning: 'me / to me' }, { term: 'te', meaning: 'you / to you' },
-      { term: 'lo', meaning: 'it / him (direct object)' }, { term: 'la', meaning: 'it / her (direct object)' },
-      { term: 'le', meaning: 'to him / to her / to you (indirect object)' },
+      { term: 'me', meaning: 'me / to me', sound: 'meh' }, { term: 'te', meaning: 'you / to you', sound: 'teh' },
+      { term: 'lo', meaning: 'it / him (direct object)', sound: 'lo' }, { term: 'la', meaning: 'it / her (direct object)', sound: 'lah' },
+      { term: 'le', meaning: 'to him / to her / to you (indirect object)', sound: 'leh' },
     ] },
   { title: 'Little connectors', es: 'Conectores', emoji: '🔗', note: 'Tiny words, huge job — they\'re what makes vocab sound like a real sentence.',
     items: [
-      { term: 'y', meaning: 'and' }, { term: 'pero', meaning: 'but' }, { term: 'porque', meaning: 'because' },
-      { term: 'entonces', meaning: 'so / then' }, { term: 'también', meaning: 'also / too' },
+      { term: 'y', meaning: 'and', sound: 'ee' }, { term: 'pero', meaning: 'but', sound: 'PEH-ro' }, { term: 'porque', meaning: 'because', sound: 'POR-keh' },
+      { term: 'entonces', meaning: 'so / then', sound: 'en-TON-ses' }, { term: 'también', meaning: 'also / too', sound: 'tam-bee-EN' },
     ] },
   { title: 'A / with / without', es: 'Preposiciones', emoji: '📍', note: '',
     items: [
-      { term: 'para', meaning: 'for / in order to' }, { term: 'con', meaning: 'with' }, { term: 'sin', meaning: 'without' },
-      { term: 'de', meaning: 'of / from' }, { term: 'en', meaning: 'in / on / at' }, { term: 'a', meaning: 'to / at' },
+      { term: 'para', meaning: 'for / in order to', sound: 'PAH-rah' }, { term: 'con', meaning: 'with', sound: 'kon' }, { term: 'sin', meaning: 'without', sound: 'seen' },
+      { term: 'de', meaning: 'of / from', sound: 'deh' }, { term: 'en', meaning: 'in / on / at', sound: 'en' }, { term: 'a', meaning: 'to / at', sound: 'ah' },
     ] },
   { title: 'Ser vs estar — both mean "to be"', es: 'Ser y estar', emoji: '🌀',
     note: 'ser = what something IS (permanent — identity, origin). estar = how something is RIGHT NOW (temporary — mood, location).',
     items: [
-      { term: 'soy', meaning: '(ser) I am — permanent: "Soy de Londres"' }, { term: 'eres', meaning: '(ser) you are — permanent' },
-      { term: 'es', meaning: '(ser) he/she/it is — permanent' },
-      { term: 'estoy', meaning: '(estar) I am — right now: "Estoy bien"' }, { term: 'estás', meaning: '(estar) you are — right now' },
-      { term: 'está', meaning: '(estar) he/she/it is — right now' },
+      { term: 'soy', meaning: '(ser) I am — permanent: "Soy de Londres"', sound: 'soy' }, { term: 'eres', meaning: '(ser) you are — permanent', sound: 'EH-res' },
+      { term: 'es', meaning: '(ser) he/she/it is — permanent', sound: 'es' },
+      { term: 'estoy', meaning: '(estar) I am — right now: "Estoy bien"', sound: 'es-TOY' }, { term: 'estás', meaning: '(estar) you are — right now', sound: 'es-TAS' },
+      { term: 'está', meaning: '(estar) he/she/it is — right now', sound: 'es-TA' },
     ] },
   { title: 'The, a', es: 'Artículos', emoji: '📖', note: 'Spanish nouns are masculine or feminine, and the article has to match.',
     items: [
-      { term: 'el', meaning: 'the (masc.)' }, { term: 'la', meaning: 'the (fem.)' },
-      { term: 'los', meaning: 'the, plural (masc.)' }, { term: 'las', meaning: 'the, plural (fem.)' },
-      { term: 'un', meaning: 'a / an (masc.)' }, { term: 'una', meaning: 'a / an (fem.)' },
+      { term: 'el', meaning: 'the (masc.)', sound: 'el' }, { term: 'la', meaning: 'the (fem.)', sound: 'lah' },
+      { term: 'los', meaning: 'the, plural (masc.)', sound: 'los' }, { term: 'las', meaning: 'the, plural (fem.)', sound: 'lahs' },
+      { term: 'un', meaning: 'a / an (masc.)', sound: 'oon' }, { term: 'una', meaning: 'a / an (fem.)', sound: 'OO-na' },
     ] },
   { title: 'Power verbs', es: 'Verbos clave', emoji: '⚡', note: 'Three verbs that unlock most everyday sentences.',
     items: [
-      { term: 'tengo', meaning: 'I have' }, { term: 'tienes', meaning: 'you have' },
-      { term: 'quiero', meaning: 'I want' }, { term: 'quieres', meaning: 'you want' },
-      { term: 'puedo', meaning: 'I can' }, { term: 'puedes', meaning: 'you can' },
+      { term: 'tengo', meaning: 'I have', sound: 'TEN-go' }, { term: 'tienes', meaning: 'you have', sound: 'tee-EH-nes' },
+      { term: 'quiero', meaning: 'I want', sound: 'kee-EH-ro' }, { term: 'quieres', meaning: 'you want', sound: 'kee-EH-res' },
+      { term: 'puedo', meaning: 'I can', sound: 'PWEH-do' }, { term: 'puedes', meaning: 'you can', sound: 'PWEH-des' },
     ] },
   { title: 'When little words fuse together', es: 'Contracciones', emoji: '🧷',
     note: 'Spanish has exactly two real contractions — and a couple of fixed "with me/you" forms. Tap any one below.',
     items: [
-      { term: 'al', meaning: 'a + el (to the) — the only two contractions in Spanish are al and del' },
-      { term: 'del', meaning: 'de + el (of/from the)' },
-      { term: 'conmigo', meaning: 'con + mí (with me) — irregular fixed form, not "con mí"' },
-      { term: 'contigo', meaning: 'con + ti (with you) — irregular fixed form, not "con tú"' },
+      { term: 'al', meaning: 'a + el (to the) — the only two contractions in Spanish are al and del', sound: 'ahl' },
+      { term: 'del', meaning: 'de + el (of/from the)', sound: 'del' },
+      { term: 'conmigo', meaning: 'con + mí (with me) — irregular fixed form, not "con mí"', sound: 'kon-MEE-go' },
+      { term: 'contigo', meaning: 'con + ti (with you) — irregular fixed form, not "con tú"', sound: 'kon-TEE-go' },
     ],
     extra: 'There\'s a third pattern worth knowing, but it can\'t be reliably tagged word-by-word here: pronouns glue onto the end of infinitives, gerunds, and commands — decir + lo → decirlo ("to say it"), dar + me + lo → dármelo ("give it to me"), di + lo → dilo ("say it"). The ending looks like an ordinary word, so spotting it depends on context, not the letters alone.' },
 ];
@@ -896,7 +896,7 @@ export default function Camino() {
       <div className="fixed bottom-0 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid #EFE6D8', paddingBottom: 'max(4px, env(safe-area-inset-bottom))' }}>
         <div className="max-w-md mx-auto flex">
           {tabs.map(t => { const Icon = t.icon; const active = tab === t.id; return (
-            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-2"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-xs font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
+            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 pt-3.5 pb-2"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-xs font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
           ); })}
         </div>
       </div>
@@ -927,7 +927,7 @@ export default function Camino() {
     const isReturning = stats.completedLessons.length > 0;
     const dueCount = reviewItems.filter(it => it.nextDue <= new Date().toISOString().slice(0, 10)).length;
     return (
-      <div className="min-h-screen relative" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen relative" style={{ paddingTop: 'env(safe-area-inset-top)', fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={CREAM} circle={LIME} />
         <div className="max-w-md mx-auto pb-32 relative">
           <TopBar />
@@ -1188,7 +1188,7 @@ export default function Camino() {
                   {c.items.map(item => (
                     <div key={item.term} className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
                       <button onClick={() => speak(item.term)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button>
-                      <div className="flex-1"><div className="font-black text-lg" style={{ color: LIME_DK }}>{item.term}</div><div className="text-sm mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div></div>
+                      <div className="flex-1"><div className="flex items-baseline gap-2"><span className="font-black text-lg" style={{ color: LIME_DK }}>{item.term}</span>{item.sound && <span className="text-sm font-medium" style={{ color: LIME_DK, opacity: 0.32 }}>{item.sound}</span>}</div><div className="text-sm mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div></div>
                     </div>
                   ))}
                 </div>
@@ -1471,7 +1471,7 @@ export default function Camino() {
             <button onClick={() => setView('tabs')} className="relative flex items-center gap-1 text-white/90 text-base font-bold mb-6"><ArrowLeft size={18} /> Back</button>
             <div className="relative"><div className="text-white font-black text-4xl tracking-tighter">{activeWorld.name}</div><div className="text-white/80 text-base font-medium">{activeWorld.desc}</div><div className="text-white/70 text-sm font-medium mt-1">In Spanish: <span className="font-bold">{activeWorld.es}</span></div></div>
           </div>
-          <div className="px-6 -mt-5 space-y-3">{lessons.map((lesson, idx) => { const done = stats.completedLessons.includes(lesson.id); const locked = idx > 0 && !stats.completedLessons.includes(lessons[idx - 1].id); return (
+          <div className="px-6 mt-5 space-y-3">{lessons.map((lesson, idx) => { const done = stats.completedLessons.includes(lesson.id); const locked = idx > 0 && !stats.completedLessons.includes(lessons[idx - 1].id); return (
             <button key={lesson.id} disabled={locked} onClick={() => startLesson(activeWorld, lesson)} className={`w-full rounded-3xl p-5 flex items-center gap-4 text-left transition-all ${locked ? 'opacity-40' : 'active:scale-[0.98]'}`} style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl" style={{ background: done ? `linear-gradient(135deg, ${activeWorld.g1}, ${activeWorld.g2})` : locked ? '#F3ECE0' : '#F7F1E8', color: done ? '#fff' : locked ? '#C2B8A8' : INK }}>{done ? <Check size={26} /> : locked ? <Lock size={20} /> : idx + 1}</div>
               <div className="flex-1"><div className="font-bold text-xl" style={{ color: INK }}>{lesson.name}</div><div className="text-sm" style={{ color: '#8A8478' }}>{lesson.cards.length} words · {lesson.es}</div></div>
