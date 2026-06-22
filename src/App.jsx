@@ -464,14 +464,14 @@ const TappableEs = ({ text, sentenceKey, activeKey, onTap, color }) => {
 };
 const GlueExplain = ({ active }) => active ? (
   <div className="rounded-xl px-3 py-2 mt-1.5 anim-card-rise" style={{ background: '#FFF3D6', border: '1px solid #E5B84B' }}>
-    <span className="text-xs font-black" style={{ color: '#8A6A1E' }}>{active.word}</span>
-    <span className="text-xs ml-1" style={{ color: '#6E5A2E' }}>— {active.meaning}</span>
+    <span className="text-sm font-black" style={{ color: '#8A6A1E' }}>{active.word}</span>
+    <span className="text-sm ml-1" style={{ color: '#6E5A2E' }}>— {active.meaning}</span>
   </div>
 ) : null;
 
 const RecordPlayback = ({ recordedUrl, onPlay }) => (
   recordedUrl ? (
-    <button onClick={onPlay} className="w-full mt-2 rounded-xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98]" style={{ background: '#fff', border: '1px solid #EFE6D8', color: INK }}>
+    <button onClick={onPlay} className="w-full mt-2 rounded-xl py-2.5 flex items-center justify-center gap-2 text-base font-bold transition-all active:scale-[0.98]" style={{ background: '#fff', border: '1px solid #EFE6D8', color: INK }}>
       <Play size={14} /> Hear yourself say it
     </button>
   ) : null
@@ -500,6 +500,7 @@ export default function Camino() {
   const [dlgRevealed, setDlgRevealed] = useState(false);
   const [revealedEn, setRevealedEn] = useState({});
   const [glueActive, setGlueActive] = useState(null);
+  const [activeGlueCategory, setActiveGlueCategory] = useState(null);
   const [themTyping, setThemTyping] = useState(false);
   const threadEndRef = useRef(null);
 
@@ -866,10 +867,10 @@ export default function Camino() {
     <div className="flex justify-between items-center px-6 pt-7 pb-3 relative">
       <div className="text-3xl font-black tracking-tighter leading-none" style={{ color: LIME_DK, letterSpacing: '-0.04em' }}>CAMINO</div>
       <div className="flex gap-2 items-center">
-        <button onClick={() => setUiLang(l => l === 'en' ? 'es' : 'en')} className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all" style={{ background: uiLang === 'es' ? LIME : '#F1F8E4', color: uiLang === 'es' ? '#fff' : LIME_DK }} title="Switch navigation to Spanish">{uiLang === 'es' ? 'ES' : 'EN'}</button>
+        <button onClick={() => setUiLang(l => l === 'en' ? 'es' : 'en')} className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black transition-all" style={{ background: uiLang === 'es' ? LIME : '#F1F8E4', color: uiLang === 'es' ? '#fff' : LIME_DK }} title="Switch navigation to Spanish">{uiLang === 'es' ? 'ES' : 'EN'}</button>
         <button onClick={() => setView('progress')} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#F1F8E4' }}><BarChart3 size={15} style={{ color: LIME_DK }} /></button>
-        <div key={`s${stats.streak}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full ${stats.streak > 0 ? 'anim-glow' : ''}`} style={{ background: '#FFEDD9' }}><Flame size={13} className="text-orange-500" /><span className="font-bold text-xs" style={{ color: INK }}>{stats.streak}</span></div>
-        <div key={`l${stats.level}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full ${stats.level > 1 ? 'anim-glow' : ''}`} style={{ background: LIME }}><span className="font-black text-white text-xs">Lv {stats.level}</span></div>
+        <div key={`s${stats.streak}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full ${stats.streak > 0 ? 'anim-glow' : ''}`} style={{ background: '#FFEDD9' }}><Flame size={13} className="text-orange-500" /><span className="font-bold text-sm" style={{ color: INK }}>{stats.streak}</span></div>
+        <div key={`l${stats.level}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full ${stats.level > 1 ? 'anim-glow' : ''}`} style={{ background: LIME }}><span className="font-black text-white text-sm">Lv {stats.level}</span></div>
       </div>
     </div>
   );
@@ -877,10 +878,10 @@ export default function Camino() {
   const TabBar = () => {
     const tabs = [{ id: 'learn', label: 'Learn', es: 'Aprender', icon: GraduationCap }, { id: 'create', label: 'Create', es: 'Crear', icon: Wand2 }, { id: 'watch', label: 'Watch', es: 'Ver', icon: Film }, { id: 'worlds', label: 'Worlds', es: 'Mundos', icon: Globe }];
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid #EFE6D8' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid #EFE6D8', paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
         <div className="max-w-md mx-auto flex">
           {tabs.map(t => { const Icon = t.icon; const active = tab === t.id; return (
-            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-3"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-[10px] font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
+            <button key={t.id} onClick={() => { setTab(t.id); setView('tabs'); }} className="flex-1 flex flex-col items-center gap-1 py-3"><Icon size={22} style={{ color: active ? LIME_DK : '#C2B8A8' }} /><span className="text-[11px] font-bold" style={{ color: active ? LIME_DK : '#C2B8A8' }}>{uiLang === 'es' ? t.es : t.label}</span></button>
           ); })}
         </div>
       </div>
@@ -892,18 +893,18 @@ export default function Camino() {
     if (convoDate && d !== null && d >= 0) return (
       <div className="rounded-2xl p-5 mb-5" style={{ background: '#fff', border: `2px solid ${LIME}` }}>
         <div className="flex items-center gap-3"><Camilo mood="cheer" size={56} />
-          <div className="flex-1"><div className="text-xs font-bold" style={{ color: '#8A8478' }}>Your conversation {convoName && `with ${convoName}`}</div>
-            <div className="flex items-end gap-2"><div className="text-5xl font-black leading-none" style={{ color: LIME_DK }}>{d}</div><div className="font-bold mb-1 text-sm" style={{ color: INK }}>{d === 1 ? 'day to go' : 'days to go'}</div></div>
-            <button onClick={() => setShowConvoModal(true)} className="text-[11px] underline" style={{ color: '#A89F8E' }}>Edit</button>
+          <div className="flex-1"><div className="text-sm font-bold" style={{ color: '#8A8478' }}>Your conversation {convoName && `with ${convoName}`}</div>
+            <div className="flex items-end gap-2"><div className="text-5xl font-black leading-none" style={{ color: LIME_DK }}>{d}</div><div className="font-bold mb-1 text-base" style={{ color: INK }}>{d === 1 ? 'day to go' : 'days to go'}</div></div>
+            <button onClick={() => setShowConvoModal(true)} className="text-xs underline" style={{ color: '#A89F8E' }}>Edit</button>
           </div>
         </div>
       </div>
     );
-    if (convoDate && d !== null && d < 0) return (<div className="rounded-2xl p-5 mb-5 text-center" style={{ background: LIME_DK }}><div className="text-white font-black text-lg mb-1">How did it go? 🇨🇴</div><button onClick={() => setShowConvoModal(true)} className="px-5 py-2 rounded-xl bg-white font-bold text-sm" style={{ color: LIME_DK }}>Book the next one</button></div>);
-    return (<button onClick={() => setShowConvoModal(true)} className="w-full rounded-2xl p-5 mb-5 text-left active:scale-[0.98] transition-all" style={{ background: '#fff', border: `2px dashed ${LIME}80` }}><div className="flex items-center gap-3"><Camilo mood="wave" size={52} /><div className="flex-1"><div className="font-bold text-sm" style={{ color: INK }}>Book your conversation 📅</div><div className="text-xs" style={{ color: '#8A8478' }}>Set a real date with your friend.</div></div><ChevronRight size={18} style={{ color: '#C2B8A8' }} /></div></button>);
+    if (convoDate && d !== null && d < 0) return (<div className="rounded-2xl p-5 mb-5 text-center" style={{ background: LIME_DK }}><div className="text-white font-black text-xl mb-1">How did it go? 🇨🇴</div><button onClick={() => setShowConvoModal(true)} className="px-5 py-2 rounded-xl bg-white font-bold text-base" style={{ color: LIME_DK }}>Book the next one</button></div>);
+    return (<button onClick={() => setShowConvoModal(true)} className="w-full rounded-2xl p-5 mb-5 text-left active:scale-[0.98] transition-all" style={{ background: '#fff', border: `2px dashed ${LIME}80` }}><div className="flex items-center gap-3"><Camilo mood="wave" size={52} /><div className="flex-1"><div className="font-bold text-base" style={{ color: INK }}>Book your conversation 📅</div><div className="text-sm" style={{ color: '#8A8478' }}>Set a real date with your friend.</div></div><ChevronRight size={18} style={{ color: '#C2B8A8' }} /></div></button>);
   };
 
-  const SkipVoice = ({ onSkip }) => (<button onClick={onSkip} className="w-full text-center text-[11px] font-medium underline" style={{ color: '#A89F8E' }}>Can't use the mic? Tap here to continue</button>);
+  const SkipVoice = ({ onSkip }) => (<button onClick={onSkip} className="w-full text-center text-xs font-medium underline" style={{ color: '#A89F8E' }}>Can't use the mic? Tap here to continue</button>);
 
   if (view === 'tabs') {
     const examUnlocked = stats.completedLessons.length >= 3;
@@ -913,7 +914,7 @@ export default function Camino() {
     return (
       <div className="min-h-screen relative" style={{ fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes /><PageArc base={CREAM} circle={LIME} />
-        <div className="max-w-md mx-auto pb-28 relative">
+        <div className="max-w-md mx-auto pb-32 relative">
           <TopBar />
 
           {tab === 'learn' && (
@@ -921,94 +922,94 @@ export default function Camino() {
               <div className="relative w-full rounded-2xl mb-4 overflow-hidden" style={{ minHeight: 200, background: G.hero }}>
                 <div className="absolute top-4 right-4"><Camilo mood={isReturning ? 'happy' : 'wave'} size={56} /></div>
                 <div className="relative p-6 flex flex-col justify-end" style={{ minHeight: 200 }}>
-                  <div className="text-[11px] font-black uppercase tracking-[0.2em] mb-1.5 text-white/80">{uiLang === 'es' ? (isReturning ? `Nivel ${stats.level} · racha de ${stats.streak} días` : '¡Bienvenido, Luke!') : (isReturning ? `Level ${stats.level} · ${stats.streak} day streak` : 'Welcome, Luke')}</div>
+                  <div className="text-xs font-black uppercase tracking-[0.2em] mb-1.5 text-white/80">{uiLang === 'es' ? (isReturning ? `Nivel ${stats.level} · racha de ${stats.streak} días` : '¡Bienvenido, Luke!') : (isReturning ? `Level ${stats.level} · ${stats.streak} day streak` : 'Welcome, Luke')}</div>
                   <div className="font-black text-white text-4xl leading-[0.95] tracking-tight mb-3">{uiLang === 'es' ? (isReturning ? 'Sigue así.' : 'Empecemos.') : (isReturning ? 'Keep going.' : "Let's begin.")}</div>
                   <div className="rounded-xl px-3.5 py-3 mb-4 flex items-start gap-2.5" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                    <span className="text-base flex-shrink-0">💬</span>
-                    <div><div className="text-white/70 text-[10px] font-black uppercase tracking-wide mb-0.5">{uiLang === 'es' ? 'Intenta esto con' : 'Try this with'} {convoName || (uiLang === 'es' ? 'tu amigo' : 'your friend')}</div><div className="text-white text-sm font-medium leading-snug">{getHeroSuggestion()}</div></div>
+                    <span className="text-lg flex-shrink-0">💬</span>
+                    <div><div className="text-white/70 text-[11px] font-black uppercase tracking-wide mb-0.5">{uiLang === 'es' ? 'Intenta esto con' : 'Try this with'} {convoName || (uiLang === 'es' ? 'tu amigo' : 'your friend')}</div><div className="text-white text-base font-medium leading-snug">{getHeroSuggestion()}</div></div>
                   </div>
-                  <div className="flex items-center gap-2"><div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.3)' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpInLevel(stats.xp)}%`, background: '#fff' }} /></div><span className="text-white/90 text-[11px] font-bold whitespace-nowrap">{uiLang === 'es' ? `${100 - xpInLevel(stats.xp)} XP para Nv ${stats.level + 1}` : `${100 - xpInLevel(stats.xp)} XP to Lv ${stats.level + 1}`}</span></div>
+                  <div className="flex items-center gap-2"><div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.3)' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpInLevel(stats.xp)}%`, background: '#fff' }} /></div><span className="text-white/90 text-xs font-bold whitespace-nowrap">{uiLang === 'es' ? `${100 - xpInLevel(stats.xp)} XP para Nv ${stats.level + 1}` : `${100 - xpInLevel(stats.xp)} XP to Lv ${stats.level + 1}`}</span></div>
                 </div>
               </div>
 
               <ConvoCard />
 
-              <div className="flex items-center gap-2 mb-2.5 px-1"><h2 className="text-base font-black tracking-tight" style={{ color: INK }}>Up next</h2></div>
+              <div className="flex items-center gap-2 mb-2.5 px-1"><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>Up next</h2></div>
               <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
                 {dueCount > 0 && (
                   <button onClick={startReview} className="w-full p-4 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ borderBottom: '1px solid #F3ECE0' }}>
                     <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#F1F8E4' }}>🔁</div>
-                    <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Repaso — {dueCount} word{dueCount === 1 ? '' : 's'} ready</div><div className="text-xs" style={{ color: '#8A8478' }}>Spaced review — the single best way to make it stick.</div></div>
+                    <div className="flex-1"><div className="font-black text-base" style={{ color: INK }}>Repaso — {dueCount} word{dueCount === 1 ? '' : 's'} ready</div><div className="text-sm" style={{ color: '#8A8478' }}>Spaced review — the single best way to make it stick.</div></div>
                     <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
                   </button>
                 )}
                 <button onClick={() => { const pool = DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours); startDialogue(pool[Math.floor(Math.random() * pool.length)]); }} className="w-full p-4 text-left active:scale-[0.98] transition-all flex items-center gap-3">
                   <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#FFEDE5' }}>👋</div>
-                  <div className="flex-1"><div className="font-black text-sm" style={{ color: INK }}>Practice a conversation</div><div className="text-xs" style={{ color: '#8A8478' }}>{DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours).length} of {DIALOGUES.length} unlocked — more open as you learn</div></div>
+                  <div className="flex-1"><div className="font-black text-base" style={{ color: INK }}>Practice a conversation</div><div className="text-sm" style={{ color: '#8A8478' }}>{DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours).length} of {DIALOGUES.length} unlocked — more open as you learn</div></div>
                   <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
                 </button>
               </div>
 
               {examUnlocked && !examDone ? (
                 <button onClick={startExam} className="w-full rounded-2xl p-4 mb-5 text-left active:scale-[0.98] transition-all" style={{ background: G.warm }}>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80 mb-1">Milestone · No hints</div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80 mb-1">Milestone · No hints</div>
                   <div className="text-white font-black text-2xl leading-tight mb-0.5">{EXAM.title}</div>
-                  <div className="text-white/90 text-xs font-medium">Pass to earn your certificate →</div>
+                  <div className="text-white/90 text-sm font-medium">Pass to earn your certificate →</div>
                 </button>
               ) : (
                 <div className="w-full rounded-2xl p-4 mb-5 flex items-center gap-3" style={{ background: examDone ? '#F1F8E4' : '#fff', border: `1.5px solid ${examDone ? LIME : '#EFE6D8'}` }}>
                   <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: examDone ? LIME : '#F3ECE0' }}>{examDone ? <Award size={22} className="text-white" /> : <Lock size={18} style={{ color: '#C2B8A8' }} />}</div>
-                  <div className="flex-1"><div className="font-black text-base" style={{ color: INK }}>{EXAM.title}</div><div className="text-xs" style={{ color: examDone ? LIME_DK : '#A89F8E' }}>{examDone ? '✓ Passed — certificate earned' : `Unlocks after 3 lessons (${stats.completedLessons.length}/3)`}</div></div>
+                  <div className="flex-1"><div className="font-black text-lg" style={{ color: INK }}>{EXAM.title}</div><div className="text-sm" style={{ color: examDone ? LIME_DK : '#A89F8E' }}>{examDone ? '✓ Passed — certificate earned' : `Unlocks after 3 lessons (${stats.completedLessons.length}/3)`}</div></div>
                 </div>
               )}
 
-              <div className="flex items-center justify-between mb-2.5 px-1"><div className="flex items-center gap-2"><Link2 size={15} style={{ color: LIME_DK }} /><h2 className="text-base font-black tracking-tight" style={{ color: INK }}>The Bridge</h2></div><span className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>Unlock words fast</span></div>
+              <div className="flex items-center justify-between mb-2.5 px-1"><div className="flex items-center gap-2"><Link2 size={15} style={{ color: LIME_DK }} /><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>The Bridge</h2></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>Unlock words fast</span></div>
               <div className="grid grid-cols-3 gap-2.5 mb-6">{BRIDGE.map((b, idx) => { const done = stats.completedLessons.includes(b.id); const locked = idx > 0 && !stats.completedLessons.includes(BRIDGE[idx - 1].id); const bg = ['#7FB22E', '#4FA3E0', '#9B6BE0', '#E8607A', '#F2823C'][idx % 5]; const pat = BRIDGE_PATTERNS[idx % BRIDGE_PATTERNS.length]; return (
                 <button key={b.id} disabled={locked} onClick={() => startBridge(b)} className={`relative rounded-xl overflow-hidden p-2.5 flex flex-col justify-between text-left ${locked ? 'opacity-40' : 'active:scale-[0.96]'}`} style={{ minHeight: 130, backgroundColor: bg, backgroundImage: pat.backgroundImage, backgroundSize: pat.backgroundSize || 'auto' }}>
                   <div className="flex justify-end">{done ? <div className="w-6 h-6 rounded-full bg-white/90 flex items-center justify-center"><Check size={14} style={{ color: LIME_DK }} /></div> : locked ? <Lock size={14} className="text-white/70" /> : <Zap size={16} className="text-white" />}</div>
-                  <div className="text-white font-black text-[13px] leading-tight">{b.rule}</div>
+                  <div className="text-white font-black text-sm leading-tight">{b.rule}</div>
                 </button>
               ); })}</div>
 
-              <p className="text-[11px] font-bold mb-2 px-1" style={{ color: '#A89F8E' }}>Explore</p>
-              <button onClick={() => setView('glue')} className="w-full rounded-xl py-3 px-4 mb-6 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#F8F5FF' }}>
-                <span className="text-base flex-shrink-0">🧩</span>
-                <div className="flex-1"><div className="font-bold text-sm" style={{ color: '#5B4A8A' }}>Connecting words</div><div className="text-[11px]" style={{ color: '#8A7FA8' }}>mi, tus, le, porque — the little words that hold sentences together</div></div>
+              <p className="text-xs font-bold mb-2 px-1" style={{ color: '#A89F8E' }}>Explore</p>
+              <button onClick={() => { setActiveGlueCategory(null); setView('glue'); }} className="w-full rounded-xl py-3 px-4 mb-6 text-left active:scale-[0.98] transition-all flex items-center gap-3" style={{ background: '#F8F5FF' }}>
+                <span className="text-lg flex-shrink-0">🧩</span>
+                <div className="flex-1"><div className="font-bold text-base" style={{ color: '#5B4A8A' }}>Connecting words</div><div className="text-xs" style={{ color: '#8A7FA8' }}>mi, tus, le, porque — the little words that hold sentences together</div></div>
                 <ChevronRight size={15} style={{ color: '#B5A8D6' }} />
               </button>
 
-              {certificates.length > 0 && (<div className="mb-2"><div className="flex items-center gap-2 mb-3 px-1"><Award size={15} style={{ color: LIME_DK }} /><h2 className="text-base font-black" style={{ color: INK }}>Your certificates</h2></div>{certificates.map(c => (<div key={c.id} className="rounded-2xl p-4 flex items-center gap-3 mb-2" style={{ background: '#F1F8E4', border: `1px solid ${LIME}` }}><Award size={24} style={{ color: LIME_DK }} /><div><div className="font-bold text-sm" style={{ color: INK }}>{c.id}</div><div className="text-[11px]" style={{ color: '#8A8478' }}>Passed {c.date} · {c.score}/{EXAM.questions.length}</div></div></div>))}</div>)}
+              {certificates.length > 0 && (<div className="mb-2"><div className="flex items-center gap-2 mb-3 px-1"><Award size={15} style={{ color: LIME_DK }} /><h2 className="text-lg font-black" style={{ color: INK }}>Your certificates</h2></div>{certificates.map(c => (<div key={c.id} className="rounded-2xl p-4 flex items-center gap-3 mb-2" style={{ background: '#F1F8E4', border: `1px solid ${LIME}` }}><Award size={24} style={{ color: LIME_DK }} /><div><div className="font-bold text-base" style={{ color: INK }}>{c.id}</div><div className="text-xs" style={{ color: '#8A8478' }}>Passed {c.date} · {c.score}/{EXAM.questions.length}</div></div></div>))}</div>)}
             </div>
           )}
 
           {tab === 'create' && (
             <div key="create" className="px-5 anim-card-rise">
-              <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="think" size={52} /><div><div className="font-black" style={{ color: INK }}>Tell me what you heard</div><div className="text-xs" style={{ color: '#8A8478' }}>I'll turn it into a lesson — spelling and all.</div></div></div>
+              <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="think" size={52} /><div><div className="font-black" style={{ color: INK }}>Tell me what you heard</div><div className="text-sm" style={{ color: '#8A8478' }}>I'll turn it into a lesson — spelling and all.</div></div></div>
               <div className="rounded-2xl p-5 mb-5" style={{ background: '#fff', border: `1.5px solid ${LIME}60` }}>
-                <div className="relative"><textarea value={createInput} onChange={(e) => setCreateInput(e.target.value)} placeholder="e.g. bandeja paisa, or 'how do I say I'm tired?'" rows={3} className="w-full rounded-2xl p-4 pr-12 text-sm resize-none outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={listenForCreate} className="absolute right-3 top-3 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: createListening ? '#FFE0D6' : '#F1F8E4' }}><Mic size={18} className={createListening ? 'animate-pulse' : ''} style={{ color: createListening ? CORAL : LIME_DK }} /></button></div>
-                {createError && <p className="text-xs mt-2" style={{ color: CORAL }}>{createError}</p>}
+                <div className="relative"><textarea value={createInput} onChange={(e) => setCreateInput(e.target.value)} placeholder="e.g. bandeja paisa, or 'how do I say I'm tired?'" rows={3} className="w-full rounded-2xl p-4 pr-12 text-base resize-none outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={listenForCreate} className="absolute right-3 top-3 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: createListening ? '#FFE0D6' : '#F1F8E4' }}><Mic size={18} className={createListening ? 'animate-pulse' : ''} style={{ color: createListening ? CORAL : LIME_DK }} /></button></div>
+                {createError && <p className="text-sm mt-2" style={{ color: CORAL }}>{createError}</p>}
                 <button onClick={createLesson} disabled={creating || !createInput.trim()} className="w-full mt-3 py-3.5 rounded-2xl font-black text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40" style={{ background: LIME_DK }}>{creating ? <><Loader2 size={18} className="animate-spin" /> Building...</> : <><Sparkles size={18} /> Make me a lesson</>}</button>
               </div>
-              {customLessons.length > 0 && (<><div className="flex items-center gap-2 mb-3"><BookOpen size={15} style={{ color: '#8A8478' }} /><h2 className="text-base font-black" style={{ color: INK }}>My lessons</h2></div><div className="space-y-2.5 mb-6">{customLessons.map(lesson => { const done = stats.completedLessons.includes(lesson.id); return (<button key={lesson.id} onClick={() => startCustomLesson(lesson)} className="w-full rounded-2xl p-3.5 flex items-center gap-3 text-left transition-all active:scale-[0.98]" style={{ background: '#fff', border: `1px solid ${LIME}40` }}><div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#F1F8E4' }}>{lesson.emoji}</div><div className="flex-1"><div className="font-bold text-sm" style={{ color: INK }}>{lesson.name}</div><div className="text-[11px]" style={{ color: '#8A8478' }}>{lesson.cards.length} words · made by you</div></div>{done ? <Check size={18} style={{ color: LIME_DK }} /> : <ChevronRight size={18} style={{ color: '#C2B8A8' }} />}</button>); })}</div></>)}
+              {customLessons.length > 0 && (<><div className="flex items-center gap-2 mb-3"><BookOpen size={15} style={{ color: '#8A8478' }} /><h2 className="text-lg font-black" style={{ color: INK }}>My lessons</h2></div><div className="space-y-2.5 mb-6">{customLessons.map(lesson => { const done = stats.completedLessons.includes(lesson.id); return (<button key={lesson.id} onClick={() => startCustomLesson(lesson)} className="w-full rounded-2xl p-3.5 flex items-center gap-3 text-left transition-all active:scale-[0.98]" style={{ background: '#fff', border: `1px solid ${LIME}40` }}><div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#F1F8E4' }}>{lesson.emoji}</div><div className="flex-1"><div className="font-bold text-base" style={{ color: INK }}>{lesson.name}</div><div className="text-xs" style={{ color: '#8A8478' }}>{lesson.cards.length} words · made by you</div></div>{done ? <Check size={18} style={{ color: LIME_DK }} /> : <ChevronRight size={18} style={{ color: '#C2B8A8' }} />}</button>); })}</div></>)}
 
-              <div className="flex items-center gap-2 mb-3"><StickyNote size={15} style={{ color: '#8A8478' }} /><h2 className="text-base font-black" style={{ color: INK }}>My notes</h2></div>
+              <div className="flex items-center gap-2 mb-3"><StickyNote size={15} style={{ color: '#8A8478' }} /><h2 className="text-lg font-black" style={{ color: INK }}>My notes</h2></div>
               <div className="rounded-2xl p-4 mb-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                <div className="relative"><textarea value={noteInput} onChange={(e) => setNoteInput(e.target.value)} placeholder="Jot down a word, question, or thing to revisit..." rows={2} className="w-full rounded-xl p-3 pr-11 text-sm resize-none outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={listenForNote} className="absolute right-2 top-2 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: noteListening ? '#FFE0D6' : '#F1F8E4' }}><Mic size={15} className={noteListening ? 'animate-pulse' : ''} style={{ color: noteListening ? CORAL : LIME_DK }} /></button></div>
-                <button onClick={saveNote} disabled={!noteInput.trim()} className="w-full mt-2 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-40" style={{ background: INK }}>Save note</button>
+                <div className="relative"><textarea value={noteInput} onChange={(e) => setNoteInput(e.target.value)} placeholder="Jot down a word, question, or thing to revisit..." rows={2} className="w-full rounded-xl p-3 pr-11 text-base resize-none outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={listenForNote} className="absolute right-2 top-2 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: noteListening ? '#FFE0D6' : '#F1F8E4' }}><Mic size={15} className={noteListening ? 'animate-pulse' : ''} style={{ color: noteListening ? CORAL : LIME_DK }} /></button></div>
+                <button onClick={saveNote} disabled={!noteInput.trim()} className="w-full mt-2 py-2.5 rounded-xl font-bold text-base text-white disabled:opacity-40" style={{ background: INK }}>Save note</button>
               </div>
-              {notes.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Saved notes show up here.</p></div>) : (
-                <div className="space-y-2">{notes.map(n => (<div key={n.id} className="rounded-xl p-3 flex items-start gap-2" style={{ background: '#FFF8EC', border: '1px solid #F3E6CC' }}><div className="flex-1"><div className="text-sm" style={{ color: INK }}>{n.text}</div><div className="text-[10px]" style={{ color: '#B5AB9A' }}>{n.date}</div></div><button onClick={() => deleteNote(n.id)}><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button></div>))}</div>
+              {notes.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-base" style={{ color: '#8A8478' }}>Saved notes show up here.</p></div>) : (
+                <div className="space-y-2">{notes.map(n => (<div key={n.id} className="rounded-xl p-3 flex items-start gap-2" style={{ background: '#FFF8EC', border: '1px solid #F3E6CC' }}><div className="flex-1"><div className="text-base" style={{ color: INK }}>{n.text}</div><div className="text-[11px]" style={{ color: '#B5AB9A' }}>{n.date}</div></div><button onClick={() => deleteNote(n.id)}><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button></div>))}</div>
               )}
 
-              <div className="flex items-center gap-2 mb-3 mt-6"><Link2 size={15} style={{ color: '#8A8478' }} /><h2 className="text-base font-black" style={{ color: INK }}>Saved links</h2></div>
+              <div className="flex items-center gap-2 mb-3 mt-6"><Link2 size={15} style={{ color: '#8A8478' }} /><h2 className="text-lg font-black" style={{ color: INK }}>Saved links</h2></div>
               <div className="rounded-2xl p-4 mb-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                <div className="flex gap-2"><input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste a video, article, or podcast link..." className="flex-1 rounded-xl p-3 text-sm outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={addLink} disabled={!linkInput.trim()} className="px-4 rounded-xl font-bold text-sm text-white disabled:opacity-40" style={{ background: INK }}>Save</button></div>
+                <div className="flex gap-2"><input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} placeholder="Paste a video, article, or podcast link..." className="flex-1 rounded-xl p-3 text-base outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} /><button onClick={addLink} disabled={!linkInput.trim()} className="px-4 rounded-xl font-bold text-base text-white disabled:opacity-40" style={{ background: INK }}>Save</button></div>
               </div>
-              {links.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-sm" style={{ color: '#8A8478' }}>Save anything to watch, read, or listen to later.</p></div>) : (
+              {links.length === 0 ? (<div className="text-center py-6 px-4 rounded-2xl" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}><p className="text-base" style={{ color: '#8A8478' }}>Save anything to watch, read, or listen to later.</p></div>) : (
                 <div className="space-y-2">{links.map(l => { const { Icon, type, bg, color } = getLinkMeta(l.url); return (
                   <div key={l.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8', opacity: l.done ? 0.55 : 1 }}>
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg }}><Icon size={16} style={{ color }} /></div>
-                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0"><div className="text-sm font-medium truncate" style={{ color: INK, textDecoration: l.done ? 'line-through' : 'none' }}>{l.label}</div><div className="text-[10px] font-bold" style={{ color }}>{type}</div></a>
+                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0"><div className="text-base font-medium truncate" style={{ color: INK, textDecoration: l.done ? 'line-through' : 'none' }}>{l.label}</div><div className="text-[11px] font-bold" style={{ color }}>{type}</div></a>
                     <button onClick={() => toggleLinkDone(l.id)} className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: l.done ? LIME : '#F3ECE0' }}><Check size={13} style={{ color: l.done ? '#fff' : '#C2B8A8' }} /></button>
                     <button onClick={() => deleteLink(l.id)} className="flex-shrink-0"><Trash2 size={15} style={{ color: '#C2B8A8' }} /></button>
                   </div>
@@ -1019,30 +1020,30 @@ export default function Camino() {
 
           {tab === 'watch' && (
             <div key="watch" className="px-5 anim-card-rise">
-              <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="happy" size={52} /><div><div className="font-black" style={{ color: INK }}>Watch & absorb</div><div className="text-xs" style={{ color: '#8A8478' }}>Aim for ~90%. Let the rest wash over you.</div></div></div>
+              <div className="flex items-center gap-3 mb-4 px-1"><Camilo mood="happy" size={52} /><div><div className="font-black" style={{ color: INK }}>Watch & absorb</div><div className="text-sm" style={{ color: '#8A8478' }}>Aim for ~90%. Let the rest wash over you.</div></div></div>
               <div className="space-y-3">{VIDEO_TIERS.map(t => { const unlocked = stats.level >= t.minLevel; const bg = t.minLevel === 1 ? '#7FB22E' : t.minLevel === 3 ? '#4FA3E0' : '#F2823C'; return (
                 <div key={t.tier} onClick={() => { if (unlocked) window.open(t.url, '_blank'); }} role="button" className={`rounded-xl p-4 flex items-center gap-3 ${unlocked ? 'cursor-pointer active:scale-[0.98]' : 'opacity-60'}`} style={{ background: bg }}>
                   <div className="w-11 h-11 rounded-xl bg-white/25 flex items-center justify-center text-xl flex-shrink-0">{t.emoji}</div>
-                  <div className="flex-1"><div className="flex items-center gap-2"><div className="text-white font-bold text-sm">{t.tier}</div>{!unlocked && <span className="text-[9px] font-bold text-white/80 bg-white/20 px-2 py-0.5 rounded-full">Lv {t.minLevel}+</span>}</div><div className="text-white/80 text-[11px]">{t.desc}</div><div className="text-white/60 text-[10px] mt-0.5">app.dreaming.com · filtered to this level</div></div>
+                  <div className="flex-1"><div className="flex items-center gap-2"><div className="text-white font-bold text-base">{t.tier}</div>{!unlocked && <span className="text-[10px] font-bold text-white/80 bg-white/20 px-2 py-0.5 rounded-full">Lv {t.minLevel}+</span>}</div><div className="text-white/80 text-xs">{t.desc}</div><div className="text-white/60 text-[11px] mt-0.5">app.dreaming.com · filtered to this level</div></div>
                   {unlocked ? <Play size={18} className="text-white" /> : <Lock size={16} className="text-white/70" />}
                 </div>
               ); })}</div>
               <div className="mt-5 rounded-2xl p-4" style={{ background: '#fff', border: `1.5px solid ${LIME}` }}>
-                <div className="flex items-center justify-between mb-3"><div className="font-black text-sm" style={{ color: INK }}>Log what you watched</div><div key={inputMinutes} className="text-xs font-bold anim-glow" style={{ color: LIME_DK }}>{(inputMinutes / 60).toFixed(1)}h total</div></div>
+                <div className="flex items-center justify-between mb-3"><div className="font-black text-base" style={{ color: INK }}>Log what you watched</div><div key={inputMinutes} className="text-sm font-bold anim-glow" style={{ color: LIME_DK }}>{(inputMinutes / 60).toFixed(1)}h total</div></div>
                 <div className="grid grid-cols-4 gap-2">{[5, 10, 15, 30].map(m => { const isJust = justLogged === m; return (
-                  <button key={m} onClick={() => logInput(m)} disabled={!!justLogged} className={`rounded-xl py-2.5 font-bold text-sm flex items-center justify-center gap-1 ${isJust ? 'anim-glow' : ''}`} style={{ background: isJust ? LIME_DK : '#F1F8E4', color: isJust ? '#fff' : LIME_DK, transform: isJust ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s ease, background 0.2s ease' }}>
+                  <button key={m} onClick={() => logInput(m)} disabled={!!justLogged} className={`rounded-xl py-2.5 font-bold text-base flex items-center justify-center gap-1 ${isJust ? 'anim-glow' : ''}`} style={{ background: isJust ? LIME_DK : '#F1F8E4', color: isJust ? '#fff' : LIME_DK, transform: isJust ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s ease, background 0.2s ease' }}>
                     {isJust ? <><Check size={14} /> +{m}</> : `${m}m`}
                   </button>
                 ); })}</div>
               </div>
-              <div className="mt-4 rounded-2xl p-4" style={{ background: SKY, border: '1px solid #DCEBF8' }}><p className="text-xs leading-relaxed" style={{ color: '#4A6E8A' }}>💡 <span className="font-bold">Why this works:</span> watching input you mostly understand is how your brain absorbs Spanish naturally. Even 10 minutes counts.</p></div>
+              <div className="mt-4 rounded-2xl p-4" style={{ background: SKY, border: '1px solid #DCEBF8' }}><p className="text-sm leading-relaxed" style={{ color: '#4A6E8A' }}>💡 <span className="font-bold">Why this works:</span> watching input you mostly understand is how your brain absorbs Spanish naturally. Even 10 minutes counts.</p></div>
             </div>
           )}
 
           {tab === 'worlds' && (
             <div key="worlds" className="px-5 anim-card-rise">
-              <div className="flex items-center gap-2 mb-1"><BookOpen size={18} style={{ color: LIME_DK }} /><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>Foundations</h2><span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F1F8E4', color: LIME_DK }}>Your base</span></div>
-              <p className="text-xs mb-4" style={{ color: '#8A8478' }}>Work through these in order — your core. Everything else builds on it.</p>
+              <div className="flex items-center gap-2 mb-1"><BookOpen size={18} style={{ color: LIME_DK }} /><h2 className="text-xl font-black tracking-tight" style={{ color: INK }}>Foundations</h2><span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F1F8E4', color: LIME_DK }}>Your base</span></div>
+              <p className="text-sm mb-4" style={{ color: '#8A8478' }}>Work through these in order — your core. Everything else builds on it.</p>
               {(() => {
                 const nextIdx = FOUNDATIONS.findIndex(u => !stats.completedLessons.includes(u.id));
                 const cutoff = nextIdx === -1 ? FOUNDATIONS.length : nextIdx + 1;
@@ -1056,20 +1057,20 @@ export default function Camino() {
                       return (
                         <button key={unit.id} disabled={locked} onClick={() => startLesson({ name: unit.name, es: unit.es, emoji: '📘', g1: LIME, g2: LIME_DK, desc: unit.desc, custom: true }, unit)} className={`w-full rounded-2xl p-4 flex items-center gap-3 text-left transition-all ${locked ? 'opacity-40' : 'active:scale-[0.98]'}`} style={{ background: '#fff', border: `1px solid ${done ? LIME : '#EFE6D8'}` }}>
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black flex-shrink-0" style={{ background: done ? LIME : locked ? '#F3ECE0' : '#F1F8E4', color: done ? '#fff' : locked ? '#C2B8A8' : LIME_DK }}>{done ? <Check size={20} /> : locked ? <Lock size={15} /> : unit.n}</div>
-                          <div className="flex-1"><div className="font-bold text-sm" style={{ color: INK }}>{unit.name}</div><div className="text-[11px]" style={{ color: '#8A8478' }}>{unit.desc}</div></div>
-                          <div className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FFF3D6', color: '#C08A1E' }}><Star size={10} fill="#C08A1E" /> {unit.xp}</div>
+                          <div className="flex-1"><div className="font-bold text-base" style={{ color: INK }}>{unit.name}</div><div className="text-xs" style={{ color: '#8A8478' }}>{unit.desc}</div></div>
+                          <div className="flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FFF3D6', color: '#C08A1E' }}><Star size={10} fill="#C08A1E" /> {unit.xp}</div>
                         </button>
                       );
                     })}
-                    {hiddenCount > 0 && (<button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-sm font-bold" style={{ background: '#F3ECE0', color: '#8A8478' }}><ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />{fndExpanded ? 'Show less' : `${hiddenCount} more units locked — tap to preview`}</button>)}
+                    {hiddenCount > 0 && (<button onClick={() => setFndExpanded(e => !e)} className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-base font-bold" style={{ background: '#F3ECE0', color: '#8A8478' }}><ChevronDown size={16} style={{ transform: fndExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />{fndExpanded ? 'Show less' : `${hiddenCount} more units locked — tap to preview`}</button>)}
                   </div>
                 );
               })()}
-              <div className="flex items-center gap-2 mb-1"><Globe size={18} style={{ color: '#8A8478' }} /><h2 className="text-lg font-black tracking-tight" style={{ color: INK }}>Themed worlds</h2><span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F3ECE0', color: '#8A8478' }}>Add-ons</span></div>
-              <p className="text-xs mb-5" style={{ color: '#8A8478' }}>Extra vocabulary rooted in your life. Dip in anytime.</p>
+              <div className="flex items-center gap-2 mb-1"><Globe size={18} style={{ color: '#8A8478' }} /><h2 className="text-xl font-black tracking-tight" style={{ color: INK }}>Themed worlds</h2><span className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: '#F3ECE0', color: '#8A8478' }}>Add-ons</span></div>
+              <p className="text-sm mb-5" style={{ color: '#8A8478' }}>Extra vocabulary rooted in your life. Dip in anytime.</p>
               <div className="grid grid-cols-2 gap-3">{WORLDS.map((world) => { const lessons = BASE_CURRICULUM[world.id] || []; const done = lessons.filter(l => stats.completedLessons.includes(l.id)).length; return (
                 <button key={world.id} onClick={() => { setActiveWorld(world); setView('world'); }} className="rounded-2xl p-4 flex flex-col justify-between text-left active:scale-[0.97]" style={{ minHeight: 140, background: world.g2 }}>
-                  <div className="text-3xl">{world.emoji}</div><div><div className="text-white font-black text-lg leading-tight">{world.name}</div><div className="text-white/80 text-[10px]">{done}/{lessons.length} done</div></div>
+                  <div className="text-3xl">{world.emoji}</div><div><div className="text-white font-black text-xl leading-tight">{world.name}</div><div className="text-white/80 text-[11px]">{done}/{lessons.length} done</div></div>
                 </button>
               ); })}</div>
             </div>
@@ -1081,11 +1082,11 @@ export default function Camino() {
           <div className="fixed inset-0 z-30 flex items-end justify-center" style={{ background: 'rgba(42,42,40,0.5)' }} onClick={() => setShowConvoModal(false)}>
             <div className="max-w-md w-full rounded-t-3xl p-6 pb-10" style={{ background: '#fff' }} onClick={e => e.stopPropagation()}>
               <div className="w-12 h-1 rounded-full mx-auto mb-5" style={{ background: '#E3D9C8' }} />
-              <div className="flex items-center gap-3 mb-3"><Camilo mood="cheer" size={56} /><div><h2 className="text-xl font-black" style={{ color: INK }}>Book your conversation</h2><p className="text-sm" style={{ color: '#8A8478' }}>A real date. A real person. Your goal.</p></div></div>
-              <label className="text-xs font-bold uppercase tracking-wide" style={{ color: '#A89F8E' }}>Who with?</label>
-              <input value={convoName} onChange={e => setConvoName(e.target.value)} placeholder="Your friend's name" className="w-full mt-1 mb-4 rounded-2xl p-3.5 text-sm outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} />
-              <label className="text-xs font-bold uppercase tracking-wide" style={{ color: '#A89F8E' }}>When?</label>
-              <input type="date" value={convoDate ? convoDate.slice(0,10) : ''} onChange={e => setConvoDate(e.target.value)} className="w-full mt-1 mb-6 rounded-2xl p-3.5 text-sm outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} />
+              <div className="flex items-center gap-3 mb-3"><Camilo mood="cheer" size={56} /><div><h2 className="text-xl font-black" style={{ color: INK }}>Book your conversation</h2><p className="text-base" style={{ color: '#8A8478' }}>A real date. A real person. Your goal.</p></div></div>
+              <label className="text-sm font-bold uppercase tracking-wide" style={{ color: '#A89F8E' }}>Who with?</label>
+              <input value={convoName} onChange={e => setConvoName(e.target.value)} placeholder="Your friend's name" className="w-full mt-1 mb-4 rounded-2xl p-3.5 text-base outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} />
+              <label className="text-sm font-bold uppercase tracking-wide" style={{ color: '#A89F8E' }}>When?</label>
+              <input type="date" value={convoDate ? convoDate.slice(0,10) : ''} onChange={e => setConvoDate(e.target.value)} className="w-full mt-1 mb-6 rounded-2xl p-3.5 text-base outline-none" style={{ background: CREAM, border: '1px solid #EFE6D8', color: INK }} />
               <button onClick={() => setShowConvoModal(false)} disabled={!convoDate} className="w-full py-4 rounded-2xl font-black text-white disabled:opacity-40" style={{ background: LIME_DK }}>Set my goal</button>
             </div>
           </div>
@@ -1110,21 +1111,21 @@ export default function Camino() {
           <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Your progress</h1></div>
           <Keyframes />
           <div className="px-6 mt-4"><div className="swipe-row">
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: LIME_DK }}>{stats.level}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: INK }}>{stats.xp}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>TOTAL XP</div></div>
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl flex items-center justify-center gap-1 anim-count" style={{ color: INK }}>{stats.streak}<Flame size={14} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
-            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: '#4FA3E0' }}>{(inputMinutes / 60).toFixed(1)}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>INPUT HRS</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: LIME_DK }}>{stats.level}</div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: INK }}>{stats.xp}</div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>TOTAL XP</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl flex items-center justify-center gap-1 anim-count" style={{ color: INK }}>{stats.streak}<Flame size={14} className="text-orange-500" /></div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
+            <div className="swipe-card rounded-2xl p-4 text-center" style={{ width: 108, background: '#fff', border: '1px solid #EFE6D8' }}><div className="font-black text-2xl anim-count" style={{ color: '#4FA3E0' }}>{(inputMinutes / 60).toFixed(1)}</div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>INPUT HRS</div></div>
           </div></div>
           <div className="px-6 mt-6 space-y-4">{rows.map(r => (
-            <div key={r.label}><div className="flex justify-between text-sm mb-1"><span className="font-bold" style={{ color: INK }}>{r.label}</span><span className="font-bold" style={{ color: r.color }}>{r.val}</span></div><div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${progressBarsReady ? r.pct : 0}%`, background: r.color }} /></div></div>
+            <div key={r.label}><div className="flex justify-between text-base mb-1"><span className="font-bold" style={{ color: INK }}>{r.label}</span><span className="font-bold" style={{ color: r.color }}>{r.val}</span></div><div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${progressBarsReady ? r.pct : 0}%`, background: r.color }} /></div></div>
           ))}</div>
 
           <div className="px-6 mt-6">
-            <h2 className="text-sm font-black mb-2" style={{ color: INK }}>Input hours over time</h2>
+            <h2 className="text-base font-black mb-2" style={{ color: INK }}>Input hours over time</h2>
             {hoursSeries.length < 2 ? (
               <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1px dashed #E3D9C8' }}>
-                <p className="text-sm mb-3" style={{ color: '#8A8478' }}>{inputMinutes === 0 ? "You haven't logged any Watch & Absorb time yet — this chart tracks that separately from lesson XP." : "Almost there — log on one more day and your trend line appears here."}</p>
-                <button onClick={() => { setTab('watch'); setView('tabs'); }} className="px-4 py-2 rounded-xl font-bold text-sm text-white" style={{ background: LIME_DK }}>Go log some watch time →</button>
+                <p className="text-base mb-3" style={{ color: '#8A8478' }}>{inputMinutes === 0 ? "You haven't logged any Watch & Absorb time yet — this chart tracks that separately from lesson XP." : "Almost there — log on one more day and your trend line appears here."}</p>
+                <button onClick={() => { setTab('watch'); setView('tabs'); }} className="px-4 py-2 rounded-xl font-bold text-base text-white" style={{ background: LIME_DK }}>Go log some watch time →</button>
               </div>
             ) : (<>
               <div className="rounded-2xl p-2" style={{ background: '#fff', border: '1px solid #EFE6D8', height: 190 }}>
@@ -1138,41 +1139,54 @@ export default function Camino() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-[10px] mt-2" style={{ color: '#B5AB9A' }}>Dashed lines are general comprehensible-input benchmarks from research — not a prediction about you specifically.</p>
+              <p className="text-[11px] mt-2" style={{ color: '#B5AB9A' }}>Dashed lines are general comprehensible-input benchmarks from research — not a prediction about you specifically.</p>
             </>)}
           </div>
 
-          {certificates.length > 0 && (<div className="px-6 mt-6"><h2 className="text-sm font-black mb-2" style={{ color: INK }}>Certificates</h2>{certificates.map(c => (<div key={c.id} className="rounded-xl p-3 flex items-center gap-2 mb-2" style={{ background: '#F1F8E4' }}><Award size={18} style={{ color: LIME_DK }} /><span className="text-sm font-bold" style={{ color: INK }}>{c.id}</span></div>))}</div>)}
-          <div className="px-6 mt-6"><Camilo mood="proud" size={70} /><p className="text-sm mt-2" style={{ color: '#8A8478' }}>Every bar here moves because you showed up. That's the whole game.</p></div>
+          {certificates.length > 0 && (<div className="px-6 mt-6"><h2 className="text-base font-black mb-2" style={{ color: INK }}>Certificates</h2>{certificates.map(c => (<div key={c.id} className="rounded-xl p-3 flex items-center gap-2 mb-2" style={{ background: '#F1F8E4' }}><Award size={18} style={{ color: LIME_DK }} /><span className="text-base font-bold" style={{ color: INK }}>{c.id}</span></div>))}</div>)}
+          <div className="px-6 mt-6"><Camilo mood="proud" size={70} /><p className="text-base mt-2" style={{ color: '#8A8478' }}>Every bar here moves because you showed up. That's the whole game.</p></div>
         </div>
       </div>
     );
   }
 
   if (view === 'glue') {
+    if (!activeGlueCategory) {
+      return (
+        <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
+          <div className="max-w-md mx-auto pb-10">
+            <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Connecting Words</h1></div>
+            <p className="px-6 mt-2 text-base" style={{ color: '#8A8478' }}>The small words that hold a sentence together. Pick one group at a time — each is short enough for a quick pass.</p>
+            <div className="px-6 mt-5 space-y-2.5">
+              {GLUE_CATEGORIES.map(cat => (
+                <button key={cat.title} onClick={() => setActiveGlueCategory(cat)} className="w-full rounded-2xl p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-all" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: '#F8F5FF' }}>{cat.emoji}</div>
+                  <div className="flex-1"><div className="font-black text-base" style={{ color: INK }}>{cat.title}</div><div className="text-sm" style={{ color: '#8A8478' }}>{cat.items.length} words · {cat.es}</div></div>
+                  <ChevronRight size={18} style={{ color: '#C2B8A8' }} />
+                </button>
+              ))}
+            </div>
+            <div className="px-6 mt-5"><p className="text-sm" style={{ color: '#B5AB9A' }}>💡 You'll also see these words underlined inside Conversation practice — tap any underlined word there for a quick reminder.</p></div>
+          </div>
+        </div>
+      );
+    }
+    const cat = activeGlueCategory;
     return (
       <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto pb-10">
-          <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>Connecting Words</h1></div>
-          <p className="px-6 mt-2 text-sm" style={{ color: '#8A8478' }}>The small words that hold a sentence together. Vocabulary gets you started — these are what make it sound like real Spanish. Come back here any time.</p>
-          <div className="px-6 mt-5 space-y-4">
-            {GLUE_CATEGORIES.map((cat, ci) => (
-              <div key={cat.title} className="rounded-2xl p-4" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-                <div className="flex items-center gap-2 mb-1"><span className="text-lg">{cat.emoji}</span><div className="font-black text-sm" style={{ color: INK }}>{cat.title}</div><span className="text-[10px] font-bold ml-auto" style={{ color: '#A89F8E' }}>{cat.es}</span></div>
-                {cat.note && <p className="text-xs mb-3" style={{ color: '#6E675B' }}>{cat.note}</p>}
-                <div className="grid grid-cols-2 gap-2">
-                  {cat.items.map(item => (
-                    <div key={item.term} className="rounded-xl px-3 py-2" style={{ background: '#FBF7EF' }}>
-                      <div className="flex items-center gap-1.5"><span className="font-black text-sm" style={{ color: LIME_DK }}>{item.term}</span><button onClick={() => speak(item.term)} className="flex-shrink-0"><Volume2 size={11} style={{ color: '#C2B8A8' }} /></button></div>
-                      <div className="text-[11px] mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div>
-                    </div>
-                  ))}
-                </div>
-                {cat.extra && <p className="text-[11px] mt-3 pt-3" style={{ color: '#8A8478', borderTop: '1px solid #F0E9DA' }}>{cat.extra}</p>}
+          <div className="px-6 pt-7 flex items-center gap-3"><button onClick={() => setActiveGlueCategory(null)} style={{ color: '#A89F8E' }}><ArrowLeft size={22} /></button><h1 className="text-xl font-black" style={{ color: INK }}>{cat.emoji} {cat.title}</h1></div>
+          {cat.note && <p className="px-6 mt-3 text-base leading-relaxed" style={{ color: '#6E675B' }}>{cat.note}</p>}
+          <div className="px-6 mt-5 space-y-2.5">
+            {cat.items.map(item => (
+              <div key={item.term} className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
+                <button onClick={() => speak(item.term)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button>
+                <div className="flex-1"><div className="font-black text-lg" style={{ color: LIME_DK }}>{item.term}</div><div className="text-sm mt-0.5" style={{ color: '#6E675B' }}>{item.meaning}</div></div>
               </div>
             ))}
           </div>
-          <div className="px-6 mt-5"><p className="text-[11px]" style={{ color: '#B5AB9A' }}>💡 You'll also see these words underlined inside Conversation practice — tap any underlined word there for a quick reminder.</p></div>
+          {cat.extra && (<div className="px-6 mt-5"><div className="rounded-2xl p-4" style={{ background: SKY }}><p className="text-sm leading-relaxed" style={{ color: '#4A6E8A' }}>{cat.extra}</p></div></div>)}
+          <div className="px-6 mt-6"><button onClick={() => setActiveGlueCategory(null)} className="w-full py-3.5 rounded-2xl font-bold text-base" style={{ background: '#F3ECE0', color: INK }}>← All groups</button></div>
         </div>
       </div>
     );
@@ -1185,8 +1199,8 @@ export default function Camino() {
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${totalCount ? (currentCount / totalCount) * 100 : 0}%`, background: LIME_DK }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{currentCount}/{totalCount}</span></div>
-          <div className="px-6 pt-3"><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · {reviewMode === 'match' ? 'MEMORY MATCH' : reviewMode === 'tap' ? 'QUICK TAP' : 'SPACED REVIEW'}</div></div>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${totalCount ? (currentCount / totalCount) * 100 : 0}%`, background: LIME_DK }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{currentCount}/{totalCount}</span></div>
+          <div className="px-6 pt-3"><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · {reviewMode === 'match' ? 'MEMORY MATCH' : reviewMode === 'tap' ? 'QUICK TAP' : 'SPACED REVIEW'}</div></div>
 
           {reviewMode === 'flashcard' && (() => {
             const item = reviewQueue[reviewIdx];
@@ -1196,15 +1210,15 @@ export default function Camino() {
                 <div className="flex-1 flex flex-col items-center justify-center px-6">
                   <div key={reviewIdx} className="w-full rounded-[2rem] p-8 min-h-[260px] flex flex-col items-center justify-center anim-card-rise" style={{ background: '#fff', border: '1px solid #EFE6D8', boxShadow: '0 12px 40px -16px rgba(0,0,0,0.12)' }}>
                     {item.direction === 'recognize' ? (<>
-                      <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>What does this mean?</div>
+                      <div className="text-base font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>What does this mean?</div>
                       <div className="flex items-center gap-3"><div className="text-3xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>
                       {reviewRevealed && <div className="text-xl font-bold mt-4" style={{ color: INK }}>{item.en}</div>}
                     </>) : (<>
-                      <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How do you say this?</div>
+                      <div className="text-base font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How do you say this?</div>
                       <div className="text-2xl font-bold text-center" style={{ color: INK }}>{item.en}</div>
                       {reviewRevealed && (<div className="flex items-center gap-3 mt-4"><div className="text-2xl font-black" style={{ color: LIME_DK }}>{item.es}</div><button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button></div>)}
                     </>)}
-                    {!reviewRevealed && <button onClick={() => setReviewRevealed(true)} className="mt-5 text-sm font-bold underline" style={{ color: '#A89F8E' }}>Tap to reveal</button>}
+                    {!reviewRevealed && <button onClick={() => setReviewRevealed(true)} className="mt-5 text-base font-bold underline" style={{ color: '#A89F8E' }}>Tap to reveal</button>}
                   </div>
                 </div>
                 <div className="px-6 pb-8 pt-3">{reviewRevealed ? (<div className="flex gap-3"><button onClick={() => submitReview(false)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: '#C2B8A8' }}>Forgot</button><button onClick={() => submitReview(true)} className="flex-1 py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>✓ Knew it</button></div>) : <div style={{ height: 60 }} />}</div>
@@ -1224,7 +1238,7 @@ export default function Camino() {
             };
             return (
               <div className="flex-1 flex flex-col items-center justify-center px-6">
-                <div className="text-sm font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>{item.direction === 'recognize' ? 'What does this mean?' : 'How do you say this?'}</div>
+                <div className="text-base font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>{item.direction === 'recognize' ? 'What does this mean?' : 'How do you say this?'}</div>
                 <div className="flex items-center gap-3 mb-6"><div className="text-3xl font-black" style={{ color: item.direction === 'recognize' ? LIME_DK : INK }}>{item.direction === 'recognize' ? item.es : item.en}</div>{item.direction === 'recognize' && <button onClick={() => speak(item.es)} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#F1F8E4' }}><Volume2 size={18} style={{ color: LIME_DK }} /></button>}</div>
                 <div className="w-full space-y-2.5">{item.options.map(opt => { const isAnswered = !!tapAnswered; const isThis = tapAnswered && tapAnswered.opt === opt; const isCorrectOpt = opt === item.correctText; return (
                   <button key={opt} onClick={() => !isAnswered && onTapOption(opt)} disabled={isAnswered} className="w-full rounded-2xl p-4 font-bold text-left transition-all" style={{ background: isAnswered ? (isCorrectOpt ? '#F1F8E4' : isThis ? '#FFEDE9' : '#fff') : '#fff', border: `1.5px solid ${isAnswered && isCorrectOpt ? LIME : isAnswered && isThis ? CORAL : '#EFE6D8'}`, color: INK }}>{opt}</button>
@@ -1235,7 +1249,7 @@ export default function Camino() {
 
           {reviewMode === 'match' && (
             <div className="flex-1 flex flex-col items-center justify-center px-6">
-              <div className="text-sm font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>Find the matching pairs</div>
+              <div className="text-base font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>Find the matching pairs</div>
               <div className="grid grid-cols-3 gap-2.5 w-full">{matchCards.map((c, idx) => (
                 <button key={c.key} onClick={() => flipMatchCard(idx)} disabled={c.solved || matchBusy} className={`flip-card ${c.solved ? 'anim-solidify' : ''}`} style={{ minHeight: 64 }}>
                   <div className={`flip-inner ${c.flipped || c.solved ? 'is-flipped' : ''}`}>
@@ -1259,44 +1273,44 @@ export default function Camino() {
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col" style={{ height: '100vh' }}>
-          <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
-          <div className="px-6 pt-3 pb-1 flex items-center gap-2 flex-shrink-0"><Users size={15} style={{ color: CORAL }} /><span className="text-[10px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
+          <div className="px-6 pt-6 flex items-center gap-3 flex-shrink-0"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(dlgIdx / d.steps.length) * 100}%`, background: CORAL }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{dlgIdx + 1}/{d.steps.length}</span></div>
+          <div className="px-6 pt-3 pb-1 flex items-center gap-2 flex-shrink-0"><Users size={15} style={{ color: CORAL }} /><span className="text-[11px] font-black tracking-widest" style={{ color: CORAL }}>{d.title.toUpperCase()}</span></div>
 
           <div className="flex-1 overflow-y-auto px-6 pt-3">
             {threadSteps.map((s, idx) => {
               const isThem = s.from === 'them'; const faded = idx < dlgIdx; const revealed = !!revealedEn[idx];
               return (
                 <div key={idx} className={`flex ${isThem ? 'justify-start' : 'justify-end'} mb-3 anim-card-rise`} style={{ opacity: faded ? 0.42 : 1, transition: 'opacity 0.35s' }}>
-                  {isThem && <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0 self-end mb-1" style={{ background: '#F3ECE0' }}>🇨🇴</div>}
+                  {isThem && <div className="w-7 h-7 rounded-full flex items-center justify-center text-base mr-2 flex-shrink-0 self-end mb-1" style={{ background: '#F3ECE0' }}>🇨🇴</div>}
                   <div style={{ maxWidth: '78%' }}>
                     <div className="rounded-2xl px-4 py-2.5" style={{ background: isThem ? '#fff' : LIME_DK, border: isThem ? '1px solid #EFE6D8' : 'none', borderBottomLeftRadius: isThem ? 6 : 18, borderBottomRightRadius: isThem ? 18 : 6 }}>
                       <div className="flex items-center gap-2"><span className="font-bold" style={{ color: isThem ? INK : '#fff', fontSize: 16 }}><TappableEs text={s.es} sentenceKey={`dlg-${idx}`} activeKey={glueActive?.key} onTap={setGlueActive} color={isThem ? LIME_DK : 'rgba(255,255,255,0.7)'} /></span><button onClick={() => speak(s.es)} className="flex-shrink-0"><Volume2 size={13} style={{ color: isThem ? LIME_DK : '#fff', opacity: 0.85 }} /></button></div>
                     </div>
-                    <button onClick={() => setRevealedEn(prev => ({ ...prev, [idx]: !prev[idx] }))} className="text-[10px] font-medium mt-1 block" style={{ color: '#B5AB9A', textAlign: isThem ? 'left' : 'right', width: '100%' }}>{revealed ? s.en : '🇬🇧 Show translation'}</button>
+                    <button onClick={() => setRevealedEn(prev => ({ ...prev, [idx]: !prev[idx] }))} className="text-[11px] font-medium mt-1 block" style={{ color: '#B5AB9A', textAlign: isThem ? 'left' : 'right', width: '100%' }}>{revealed ? s.en : '🇬🇧 Show translation'}</button>
                     {glueActive?.key?.startsWith(`dlg-${idx}-`) && <GlueExplain active={glueActive} />}
                   </div>
                 </div>
               );
             })}
-            {themTyping && (<div className="flex justify-start mb-3"><div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0" style={{ background: '#F3ECE0' }}>🇨🇴</div><div className="rounded-2xl px-4 py-3.5" style={{ background: '#fff', border: '1px solid #EFE6D8', borderBottomLeftRadius: 6 }}><div className="flex gap-1">{[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: '#C2B8A8', animation: `typingDot 1.2s ${i*0.2}s infinite` }} />)}</div></div></div>)}
+            {themTyping && (<div className="flex justify-start mb-3"><div className="w-7 h-7 rounded-full flex items-center justify-center text-base mr-2 flex-shrink-0" style={{ background: '#F3ECE0' }}>🇨🇴</div><div className="rounded-2xl px-4 py-3.5" style={{ background: '#fff', border: '1px solid #EFE6D8', borderBottomLeftRadius: 6 }}><div className="flex gap-1">{[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: '#C2B8A8', animation: `typingDot 1.2s ${i*0.2}s infinite` }} />)}</div></div></div>)}
             <div ref={threadEndRef} style={{ height: 1 }} />
           </div>
 
           {step.from === 'you' && (
             <div className="px-6 pt-2 flex-shrink-0">
               <div className="rounded-3xl p-5" style={{ background: '#fff', border: `1.5px solid ${CORAL}60` }}>
-                <div className="text-[10px] font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
-                {!dlgRevealed ? (<button onClick={() => setDlgRevealed(true)} className="text-sm font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>) : (<>
+                <div className="text-[11px] font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
+                {!dlgRevealed ? (<button onClick={() => setDlgRevealed(true)} className="text-base font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>) : (<>
                   <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}><TappableEs text={step.es} sentenceKey={`dlg-you-${dlgIdx}`} activeKey={glueActive?.key} onTap={setGlueActive} /></div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
                   {glueActive?.key?.startsWith(`dlg-you-${dlgIdx}-`) && <GlueExplain active={glueActive} />}
-                  <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-[11px] font-medium mb-4 block mt-1" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
+                  <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-xs font-medium mb-4 block mt-1" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
                   <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it out loud'}</button>
                   {heard && (
                     <div className="rounded-2xl p-3 text-center mb-2 anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}>
-                      <div className="font-bold text-sm" style={{ color: INK }}>{heard}</div>
-                      {matchResult === 'good' && <div className="text-xs font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)}</div>}
-                      {matchResult === 'close' && <div className="text-xs font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}
-                      {matchResult === 'try' && <div className="text-xs font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}
+                      <div className="font-bold text-base" style={{ color: INK }}>{heard}</div>
+                      {matchResult === 'good' && <div className="text-sm font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)}</div>}
+                      {matchResult === 'close' && <div className="text-sm font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}
+                      {matchResult === 'try' && <div className="text-sm font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}
                     </div>
                   )}
                   <RecordPlayback recordedUrl={recordedUrl} onPlay={playRecording} />
@@ -1306,7 +1320,7 @@ export default function Camino() {
           )}
 
           <div className="px-6 pb-8 pt-3 space-y-2 flex-shrink-0">
-            {(step.from === 'them' || dlgRevealed) && <button onClick={advanceDialogue} className="w-full py-4 rounded-2xl font-black text-lg text-white" style={{ background: INK }}>{step.from === 'them' ? 'Continue →' : 'I said it ✓'}</button>}
+            {(step.from === 'them' || dlgRevealed) && <button onClick={advanceDialogue} className="w-full py-4 rounded-2xl font-black text-xl text-white" style={{ background: INK }}>{step.from === 'them' ? 'Continue →' : 'I said it ✓'}</button>}
             {step.from === 'you' && dlgRevealed && <SkipVoice onSkip={() => skipVoice()} />}
           </div>
         </div>
@@ -1321,21 +1335,21 @@ export default function Camino() {
     return (
       <div className="min-h-screen flex flex-col relative" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col relative">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(examIdx / EXAM.questions.length) * 100}%`, background: CORAL }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{examIdx + 1}/{EXAM.questions.length}</span></div>
-          <div className="px-6 pt-5 flex items-center gap-2"><Camilo mood="think" size={44} /><div className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#FFE9E2', color: CORAL }}>NO HINTS — YOU'VE GOT THIS</div></div>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(examIdx / EXAM.questions.length) * 100}%`, background: CORAL }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{examIdx + 1}/{EXAM.questions.length}</span></div>
+          <div className="px-6 pt-5 flex items-center gap-2"><Camilo mood="think" size={44} /><div className="inline-flex items-center gap-1.5 text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#FFE9E2', color: CORAL }}>NO HINTS — YOU'VE GOT THIS</div></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6">
             <div className="text-2xl font-black text-center mb-8" style={{ color: INK }}>{q.prompt}</div>
             {q.speak ? (
               <div className="w-full space-y-2">
                 <button onClick={() => listen(q.answer, (ok) => onAnswer(ok, 'spoken'))} disabled={listening || examAnswered} className="w-full rounded-2xl py-4 flex items-center justify-center gap-3 font-bold text-white" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={22} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Tap & answer out loud'}</button>
                 {!examAnswered && <SkipVoice onSkip={() => onAnswer(true, 'spoken')} />}
-                {examAnswered && <div className="rounded-2xl p-3 text-center" style={{ background: matchResult === 'try' ? '#FFEDE9' : '#F1F8E4', border: `1px solid ${matchResult === 'try' ? CORAL : LIME}` }}><div className="text-sm" style={{ color: INK }}>{heard}</div><div className="text-xs font-black mt-1" style={{ color: matchResult === 'try' ? CORAL : LIME_DK }}>Answer: {q.answer}</div></div>}
+                {examAnswered && <div className="rounded-2xl p-3 text-center" style={{ background: matchResult === 'try' ? '#FFEDE9' : '#F1F8E4', border: `1px solid ${matchResult === 'try' ? CORAL : LIME}` }}><div className="text-base" style={{ color: INK }}>{heard}</div><div className="text-sm font-black mt-1" style={{ color: matchResult === 'try' ? CORAL : LIME_DK }}>Answer: {q.answer}</div></div>}
               </div>
             ) : (
               <div className="w-full space-y-3">{q.options.map(opt => { const isAns = opt === q.answer; const chosen = examAnswered === opt; return (<button key={opt} onClick={() => !examAnswered && onAnswer(isAns, opt)} disabled={!!examAnswered} className="w-full rounded-2xl p-4 font-bold text-left transition-all" style={{ background: examAnswered ? (isAns ? '#F1F8E4' : chosen ? '#FFEDE9' : '#fff') : '#fff', border: `1.5px solid ${examAnswered && isAns ? LIME : examAnswered && chosen ? CORAL : '#EFE6D8'}`, color: INK }}>{opt} {examAnswered && isAns && <Check size={16} className="inline ml-1" style={{ color: LIME_DK }} />}</button>); })}</div>
             )}
           </div>
-          <div className="px-6 pb-8">{examAnswered && <button onClick={nextExam} className="w-full py-4 rounded-2xl font-black text-lg text-white" style={{ background: INK }}>{examIdx < EXAM.questions.length - 1 ? 'Next →' : 'See result'}</button>}</div>
+          <div className="px-6 pb-8">{examAnswered && <button onClick={nextExam} className="w-full py-4 rounded-2xl font-black text-xl text-white" style={{ background: INK }}>{examIdx < EXAM.questions.length - 1 ? 'Next →' : 'See result'}</button>}</div>
         </div>
       </div>
     );
@@ -1351,9 +1365,9 @@ export default function Camino() {
             <h1 className="text-3xl font-black tracking-tight mb-1" style={{ color: INK }}>{examPassed ? '¡Lo lograste! 🎓' : 'So close'}</h1>
             <p className="mb-2" style={{ color: '#8A8478' }}>{examScore}/{EXAM.questions.length} correct {examPassed ? '' : `· need ${EXAM.passMark}`}</p>
             {examPassed ? (<>
-              <div className="rounded-2xl p-5 my-6 anim-badge" style={{ background: '#F1F8E4', border: `1.5px solid ${LIME}` }}><Award size={32} style={{ color: LIME_DK }} className="mx-auto mb-2" /><div className="font-black text-lg" style={{ color: INK }}>Certificate earned</div><div className="text-sm" style={{ color: '#8A8478' }}>{EXAM.title} · {new Date().toLocaleDateString()}</div><div className="text-xs mt-2" style={{ color: LIME_DK }}>You earned this under pressure. It's real.</div></div>
+              <div className="rounded-2xl p-5 my-6 anim-badge" style={{ background: '#F1F8E4', border: `1.5px solid ${LIME}` }}><Award size={32} style={{ color: LIME_DK }} className="mx-auto mb-2" /><div className="font-black text-xl" style={{ color: INK }}>Certificate earned</div><div className="text-base" style={{ color: '#8A8478' }}>{EXAM.title} · {new Date().toLocaleDateString()}</div><div className="text-sm mt-2" style={{ color: LIME_DK }}>You earned this under pressure. It's real.</div></div>
               <button onClick={() => { setNextSuggestion({ label: 'Practice "Meet someone"', tab: 'dialogue' }); setView('tabs'); }} className="w-full py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>Continue</button>
-            </>) : (<><p className="text-sm my-5" style={{ color: '#6E675B' }}>"Tranquilo — no shame, no streak lost." — Camilo</p><button onClick={startExam} className="w-full py-4 rounded-2xl font-black text-white mb-2" style={{ background: LIME_DK }}>Try again</button><button onClick={() => setView('tabs')} className="w-full py-3 rounded-2xl font-bold" style={{ background: '#F3ECE0', color: INK }}>Review first</button></>)}
+            </>) : (<><p className="text-base my-5" style={{ color: '#6E675B' }}>"Tranquilo — no shame, no streak lost." — Camilo</p><button onClick={startExam} className="w-full py-4 rounded-2xl font-black text-white mb-2" style={{ background: LIME_DK }}>Try again</button><button onClick={() => setView('tabs')} className="w-full py-3 rounded-2xl font-bold" style={{ background: '#F3ECE0', color: INK }}>Review first</button></>)}
           </div>
         </div>
       </div>
@@ -1365,37 +1379,37 @@ export default function Camino() {
     if (bridgeStage === 'teach') return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>THE BRIDGE</div></div>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>THE BRIDGE</div></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
             <Camilo mood="cheer" size={100} />
             <div className="text-3xl font-black tracking-tight mb-2 mt-4" style={{ color: INK }}>{b.rule}</div>
-            <div className="text-lg font-black mb-5" style={{ color: LIME_DK }}>{b.big}</div>
-            <p className="text-lg leading-relaxed mb-4" style={{ color: '#6E675B' }}>{b.teach}</p>
-            <div className="rounded-2xl p-4 text-left" style={{ background: SKY }}><div className="text-[10px] font-black uppercase tracking-wide mb-1" style={{ color: '#4A6E8A' }}>Why this happens</div><p className="text-sm" style={{ color: '#4A6E8A' }}>{b.why}</p></div>
+            <div className="text-xl font-black mb-5" style={{ color: LIME_DK }}>{b.big}</div>
+            <p className="text-xl leading-relaxed mb-4" style={{ color: '#6E675B' }}>{b.teach}</p>
+            <div className="rounded-2xl p-4 text-left" style={{ background: SKY }}><div className="text-[11px] font-black uppercase tracking-wide mb-1" style={{ color: '#4A6E8A' }}>Why this happens</div><p className="text-base" style={{ color: '#4A6E8A' }}>{b.why}</p></div>
           </div>
-          <div className="px-6 pb-8"><button onClick={() => setBridgeStage('examples')} className="w-full py-4 rounded-2xl font-black text-lg text-white active:scale-[0.98] flex items-center justify-center gap-2" style={{ background: LIME_DK }}>Show me <ArrowRight size={20} /></button></div>
+          <div className="px-6 pb-8"><button onClick={() => setBridgeStage('examples')} className="w-full py-4 rounded-2xl font-black text-xl text-white active:scale-[0.98] flex items-center justify-center gap-2" style={{ background: LIME_DK }}>Show me <ArrowRight size={20} /></button></div>
         </div>
       </div>
     );
     if (bridgeStage === 'examples') return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>SHARED VS CHANGED</div></div>
-          <p className="px-6 text-xs mb-3" style={{ color: '#8A8478' }}>Grey = stays the same. Bold colour = the part that actually changes.</p>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>SHARED VS CHANGED</div></div>
+          <p className="px-6 text-sm mb-3" style={{ color: '#8A8478' }}>Grey = stays the same. Bold colour = the part that actually changes.</p>
           <div className="flex-1 flex flex-col justify-center px-6 space-y-3">{b.examples.map((ex, i) => (
             <div key={i} className="rounded-2xl p-4" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
-              <div className="text-lg"><SegWord segs={ex.enSeg} color={CORAL} /></div>
+              <div className="text-xl"><SegWord segs={ex.enSeg} color={CORAL} /></div>
               <div className="flex items-center gap-2 mt-1"><ArrowRight size={14} style={{ color: '#C2B8A8' }} /><div className="text-xl"><SegWord segs={ex.esSeg} color={LIME_DK} /></div><button onClick={() => speak(ex.es)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: '#F1F8E4' }}><Volume2 size={12} style={{ color: LIME_DK }} /></button></div>
             </div>
           ))}</div>
-          <div className="px-6 pb-8"><button onClick={() => { setBridgeStage('breakdown'); setBdRevealed(false); setBdCheckRevealed(false); }} className="w-full py-4 rounded-2xl font-black text-lg text-white active:scale-[0.98]" style={{ background: LIME_DK }}>Let's go deeper →</button></div>
+          <div className="px-6 pb-8"><button onClick={() => { setBridgeStage('breakdown'); setBdRevealed(false); setBdCheckRevealed(false); }} className="w-full py-4 rounded-2xl font-black text-xl text-white active:scale-[0.98]" style={{ background: LIME_DK }}>Let's go deeper →</button></div>
         </div>
       </div>
     );
     if (bridgeStage === 'breakdown') return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#FFEDE5', color: CORAL }}>PAUSE & THINK</div></div>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#FFEDE5', color: CORAL }}>PAUSE & THINK</div></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6">
             <Camilo mood="think" size={80} />
             {!bdRevealed ? (
@@ -1408,17 +1422,17 @@ export default function Camino() {
               <div className="mt-5 w-full anim-card-rise">
                 <div className="rounded-2xl p-4 mb-5 relative" style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
                   <button onClick={() => speakEn(b.deepDive.reveal)} className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: '#F1F8E4' }}><Volume2 size={14} style={{ color: LIME_DK }} /></button>
-                  <p className="text-base leading-relaxed pr-9" style={{ color: '#4A4540' }}>{b.deepDive.reveal}</p>
+                  <p className="text-lg leading-relaxed pr-9" style={{ color: '#4A4540' }}>{b.deepDive.reveal}</p>
                 </div>
                 <div className="rounded-2xl p-4" style={{ background: SKY }}>
-                  <div className="text-[10px] font-black uppercase tracking-wide mb-2" style={{ color: '#4A6E8A' }}>Now you try — how would you say...</div>
+                  <div className="text-[11px] font-black uppercase tracking-wide mb-2" style={{ color: '#4A6E8A' }}>Now you try — how would you say...</div>
                   <div className="text-xl font-black mb-3" style={{ color: INK }}>{b.deepDive.check.en}</div>
-                  {!bdCheckRevealed ? (<button onClick={() => { setBdCheckRevealed(true); speak(b.deepDive.check.es); }} className="px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: LIME_DK }}>Reveal</button>) : (<div className="flex items-center gap-2"><div className="text-xl font-black" style={{ color: LIME_DK }}>{b.deepDive.check.es}</div><button onClick={() => speak(b.deepDive.check.es)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#fff' }}><Volume2 size={14} style={{ color: LIME_DK }} /></button></div>)}
+                  {!bdCheckRevealed ? (<button onClick={() => { setBdCheckRevealed(true); speak(b.deepDive.check.es); }} className="px-5 py-2.5 rounded-xl font-bold text-white text-base" style={{ background: LIME_DK }}>Reveal</button>) : (<div className="flex items-center gap-2"><div className="text-xl font-black" style={{ color: LIME_DK }}>{b.deepDive.check.es}</div><button onClick={() => speak(b.deepDive.check.es)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#fff' }}><Volume2 size={14} style={{ color: LIME_DK }} /></button></div>)}
                 </div>
               </div>
             )}
           </div>
-          <div className="px-6 pb-8">{bdRevealed && bdCheckRevealed && <button onClick={() => { setBridgeStage('quiz'); setQuizIdx(0); setQuizRevealed(false); }} className="w-full py-4 rounded-2xl font-black text-lg text-white active:scale-[0.98]" style={{ background: INK }}>Now practice →</button>}</div>
+          <div className="px-6 pb-8">{bdRevealed && bdCheckRevealed && <button onClick={() => { setBridgeStage('quiz'); setQuizIdx(0); setQuizRevealed(false); }} className="w-full py-4 rounded-2xl font-black text-xl text-white active:scale-[0.98]" style={{ background: INK }}>Now practice →</button>}</div>
         </div>
       </div>
     );
@@ -1426,13 +1440,13 @@ export default function Camino() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(quizIdx / b.quiz.length) * 100}%`, background: LIME }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{quizIdx + 1}/{b.quiz.length}</span></div>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${(quizIdx / b.quiz.length) * 100}%`, background: LIME }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{quizIdx + 1}/{b.quiz.length}</span></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6">
-            <div className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How would you say...</div>
+            <div className="text-base font-bold uppercase tracking-wide mb-3" style={{ color: '#A89F8E' }}>How would you say...</div>
             <div className="text-4xl font-black text-center mb-8" style={{ color: INK }}>{q.en}</div>
             {quizRevealed ? <div className="flex items-center gap-3"><div className="text-4xl font-black" style={{ color: LIME_DK }}>{q.es}</div><button onClick={() => speak(q.es)} className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: '#F1F8E4' }}><Volume2 size={22} style={{ color: LIME_DK }} /></button></div> : <button onClick={() => { setQuizRevealed(true); speak(q.es); }} className="px-8 py-3 rounded-2xl font-bold text-white" style={{ background: LIME_DK }}>Reveal</button>}
           </div>
-          <div className="px-6 pb-8">{quizRevealed && <button onClick={() => { if (quizIdx < b.quiz.length - 1) { setQuizIdx(quizIdx + 1); setQuizRevealed(false); } else finishBridge(); }} className="w-full py-4 rounded-2xl font-black text-lg text-white" style={{ background: INK }}>{quizIdx < b.quiz.length - 1 ? 'Next →' : 'Finish ✓'}</button>}</div>
+          <div className="px-6 pb-8">{quizRevealed && <button onClick={() => { if (quizIdx < b.quiz.length - 1) { setQuizIdx(quizIdx + 1); setQuizRevealed(false); } else finishBridge(); }} className="w-full py-4 rounded-2xl font-black text-xl text-white" style={{ background: INK }}>{quizIdx < b.quiz.length - 1 ? 'Next →' : 'Finish ✓'}</button>}</div>
         </div>
       </div>
     );
@@ -1444,14 +1458,14 @@ export default function Camino() {
       <div className="min-h-screen" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto pb-10">
           <div className="relative px-6 pt-8 pb-10" style={{ background: `linear-gradient(135deg, ${activeWorld.g1} 0%, ${activeWorld.g2} 100%)` }}>
-            <button onClick={() => setView('tabs')} className="relative flex items-center gap-1 text-white/90 text-sm font-bold mb-6"><ArrowLeft size={18} /> Back</button>
-            <div className="relative"><div className="text-white font-black text-4xl tracking-tighter">{activeWorld.name}</div><div className="text-white/80 text-sm font-medium">{activeWorld.desc}</div><div className="text-white/70 text-xs font-medium mt-1">In Spanish: <span className="font-bold">{activeWorld.es}</span></div></div>
+            <button onClick={() => setView('tabs')} className="relative flex items-center gap-1 text-white/90 text-base font-bold mb-6"><ArrowLeft size={18} /> Back</button>
+            <div className="relative"><div className="text-white font-black text-4xl tracking-tighter">{activeWorld.name}</div><div className="text-white/80 text-base font-medium">{activeWorld.desc}</div><div className="text-white/70 text-sm font-medium mt-1">In Spanish: <span className="font-bold">{activeWorld.es}</span></div></div>
           </div>
           <div className="px-6 -mt-5 space-y-3">{lessons.map((lesson, idx) => { const done = stats.completedLessons.includes(lesson.id); const locked = idx > 0 && !stats.completedLessons.includes(lessons[idx - 1].id); return (
             <button key={lesson.id} disabled={locked} onClick={() => startLesson(activeWorld, lesson)} className={`w-full rounded-3xl p-5 flex items-center gap-4 text-left transition-all ${locked ? 'opacity-40' : 'active:scale-[0.98]'}`} style={{ background: '#fff', border: '1px solid #EFE6D8' }}>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl" style={{ background: done ? `linear-gradient(135deg, ${activeWorld.g1}, ${activeWorld.g2})` : locked ? '#F3ECE0' : '#F7F1E8', color: done ? '#fff' : locked ? '#C2B8A8' : INK }}>{done ? <Check size={26} /> : locked ? <Lock size={20} /> : idx + 1}</div>
-              <div className="flex-1"><div className="font-bold text-lg" style={{ color: INK }}>{lesson.name}</div><div className="text-xs" style={{ color: '#8A8478' }}>{lesson.cards.length} words · {lesson.es}</div></div>
-              <div className="flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-full" style={{ background: activeWorld.g1 + '25', color: activeWorld.g2 }}><Star size={12} fill={activeWorld.g2} /> {lesson.xp}</div>
+              <div className="flex-1"><div className="font-bold text-xl" style={{ color: INK }}>{lesson.name}</div><div className="text-sm" style={{ color: '#8A8478' }}>{lesson.cards.length} words · {lesson.es}</div></div>
+              <div className="flex items-center gap-1 text-sm font-black px-2.5 py-1 rounded-full" style={{ background: activeWorld.g1 + '25', color: activeWorld.g2 }}><Star size={12} fill={activeWorld.g2} /> {lesson.xp}</div>
             </button>
           ); })}</div>
         </div>
@@ -1466,29 +1480,29 @@ export default function Camino() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView(activeWorld?.custom ? 'tabs' : 'world')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${activeWorld.g1}, ${activeWorld.g2})` }} /></div><span className="text-xs font-bold" style={{ color: '#A89F8E' }}>{cardIndex + 1}/{activeLesson.cards.length}</span></div>
-          <div className="px-6 pt-4 flex items-center gap-3"><Camilo mood={matchResult === 'good' ? 'cheer' : phase === 'listen' ? 'listen' : 'think'} size={44} /><div className="inline-block text-[10px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: activeWorld.g1 + '25', color: activeWorld.g2 }}>{phaseInfo.label}</div></div>
+          <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView(activeWorld?.custom ? 'tabs' : 'world')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${activeWorld.g1}, ${activeWorld.g2})` }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{cardIndex + 1}/{activeLesson.cards.length}</span></div>
+          <div className="px-6 pt-4 flex items-center gap-3"><Camilo mood={matchResult === 'good' ? 'cheer' : phase === 'listen' ? 'listen' : 'think'} size={44} /><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: activeWorld.g1 + '25', color: activeWorld.g2 }}>{phaseInfo.label}</div></div>
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
             <div key={cardIndex} className="w-full rounded-[2rem] p-8 min-h-[280px] flex flex-col items-center justify-center relative anim-card-rise" style={{ background: '#fff', border: '1px solid #EFE6D8', boxShadow: '0 12px 40px -16px rgba(0,0,0,0.12)' }}>
-              <div className="text-sm font-bold uppercase tracking-wide mb-1" style={{ color: '#A89F8E' }}>English</div>
+              <div className="text-base font-bold uppercase tracking-wide mb-1" style={{ color: '#A89F8E' }}>English</div>
               <div className="text-2xl font-bold text-center mb-5" style={{ color: INK }}>{card.en}</div>
               <div className="w-16 h-px mb-5" style={{ background: '#EFE6D8' }} />
-              <div className="text-sm font-bold uppercase tracking-wide mb-2" style={{ color: '#A89F8E' }}>Spanish</div>
+              <div className="text-base font-bold uppercase tracking-wide mb-2" style={{ color: '#A89F8E' }}>Spanish</div>
               <div className="flex items-center gap-3 mb-2"><div className="text-4xl font-black text-center tracking-tight" style={{ color: LIME_DK }}>{card.es}</div><button onClick={() => speak(card.es)} className="w-12 h-12 rounded-full flex items-center justify-center active:scale-90 flex-shrink-0" style={{ background: `linear-gradient(135deg, ${activeWorld.g1}, ${activeWorld.g2})` }}><Volume2 size={22} className="text-white" /></button></div>
-              {card.hook && <div className="mt-3 text-sm text-center px-4 py-2 rounded-2xl font-medium" style={{ background: SKY, color: '#4A6E8A' }}>🧠 {card.hook}</div>}
-              {card.note && phase !== 'see' && <div className="mt-2 text-xs text-center px-3 py-1 rounded-full font-medium" style={{ color: activeWorld.g2 }}>{card.note}</div>}
+              {card.hook && <div className="mt-3 text-base text-center px-4 py-2 rounded-2xl font-medium" style={{ background: SKY, color: '#4A6E8A' }}>🧠 {card.hook}</div>}
+              {card.note && phase !== 'see' && <div className="mt-2 text-sm text-center px-3 py-1 rounded-full font-medium" style={{ color: activeWorld.g2 }}>{card.note}</div>}
             </div>
-            <div className="text-sm text-center mt-4 px-4" style={{ color: '#8A8478' }}>{phaseInfo.tip}</div>
+            <div className="text-base text-center mt-4 px-4" style={{ color: '#8A8478' }}>{phaseInfo.tip}</div>
             {phase === 'say' && (
               <div className="w-full mt-4 space-y-2">
                 <button onClick={() => listen(card.es)} disabled={listening} className="w-full rounded-2xl py-4 flex items-center justify-center gap-3 font-bold text-white transition-all active:scale-[0.98]" style={{ background: listening ? '#C2B8A8' : `linear-gradient(135deg, ${activeWorld.g1}, ${activeWorld.g2})` }}><Mic size={22} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Tap & say it out loud'}</button>
                 {!heard && <SkipVoice onSkip={() => skipVoice()} />}
-                {heard && <div className="rounded-2xl p-3 text-center anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}><div className="font-bold text-sm" style={{ color: INK }}>{heard}</div>{matchResult === 'good' && <div className="text-xs font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)} +5 XP</div>}{matchResult === 'close' && <div className="text-xs font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}{matchResult === 'try' && <div className="text-xs font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}</div>}
+                {heard && <div className="rounded-2xl p-3 text-center anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}><div className="font-bold text-base" style={{ color: INK }}>{heard}</div>{matchResult === 'good' && <div className="text-sm font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)} +5 XP</div>}{matchResult === 'close' && <div className="text-sm font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}{matchResult === 'try' && <div className="text-sm font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}</div>}
                 <RecordPlayback recordedUrl={recordedUrl} onPlay={playRecording} />
               </div>
             )}
           </div>
-          <div className="px-6 pb-8 pt-2"><button onClick={() => { if (phase === 'say' && matchResult === 'good') setSessionXp(s => s + 5); advance(); }} className="w-full py-4 rounded-2xl font-black text-lg text-white transition-all active:scale-[0.98]" style={{ background: INK }}>{phase === 'see' ? 'Got it →' : phase === 'listen' ? 'Heard it →' : (cardIndex < activeLesson.cards.length - 1 ? 'Next word →' : 'Finish ✓')}</button></div>
+          <div className="px-6 pb-8 pt-2"><button onClick={() => { if (phase === 'say' && matchResult === 'good') setSessionXp(s => s + 5); advance(); }} className="w-full py-4 rounded-2xl font-black text-xl text-white transition-all active:scale-[0.98]" style={{ background: INK }}>{phase === 'see' ? 'Got it →' : phase === 'listen' ? 'Heard it →' : (cardIndex < activeLesson.cards.length - 1 ? 'Next word →' : 'Finish ✓')}</button></div>
         </div>
       </div>
     );
@@ -1507,22 +1521,22 @@ export default function Camino() {
             <p className="mb-5" style={{ color: '#8A8478' }}>You're a little more fluent than 2 minutes ago.</p>
             {sessionMinutes >= 20 && (
               <div className="rounded-2xl p-3 mb-4 text-left" style={{ background: SKY }}>
-                <p className="text-xs" style={{ color: '#4A6E8A' }}>⏱️ You've been at this for about {sessionMinutes} minutes — solid session. Keep going if you're in the zone, or this is a good place to leave it for today.</p>
+                <p className="text-sm" style={{ color: '#4A6E8A' }}>⏱️ You've been at this for about {sessionMinutes} minutes — solid session. Keep going if you're in the zone, or this is a good place to leave it for today.</p>
               </div>
             )}
-            {correctedFrom && <div className="rounded-2xl p-3 mb-4 text-left" style={{ background: '#F1F8E4', border: `1px solid ${LIME}` }}><p className="text-xs" style={{ color: '#6E675B' }}>You typed "<span style={{ color: INK }}>{correctedFrom.typed}</span>" — built for <span className="font-bold" style={{ color: LIME_DK }}>{correctedFrom.understood}</span>.</p></div>}
+            {correctedFrom && <div className="rounded-2xl p-3 mb-4 text-left" style={{ background: '#F1F8E4', border: `1px solid ${LIME}` }}><p className="text-sm" style={{ color: '#6E675B' }}>You typed "<span style={{ color: INK }}>{correctedFrom.typed}</span>" — built for <span className="font-bold" style={{ color: LIME_DK }}>{correctedFrom.understood}</span>.</p></div>}
             {convoDate && d !== null && d >= 0 ? (
-              <div className="rounded-2xl p-4 mb-6" style={{ background: SKY, border: `1px solid ${LIME}40` }}><div className="text-xs mb-1" style={{ color: '#6E675B' }}>Prep for your conversation</div><div className="font-black text-lg" style={{ color: INK }}>{d} {d === 1 ? 'day' : 'days'} to go {convoName && `with ${convoName}`} 🇨🇴</div></div>
+              <div className="rounded-2xl p-4 mb-6" style={{ background: SKY, border: `1px solid ${LIME}40` }}><div className="text-sm mb-1" style={{ color: '#6E675B' }}>Prep for your conversation</div><div className="font-black text-xl" style={{ color: INK }}>{d} {d === 1 ? 'day' : 'days'} to go {convoName && `with ${convoName}`} 🇨🇴</div></div>
             ) : (<div className="rounded-2xl p-4 mb-6 flex items-center justify-center gap-4" style={{ background: CREAM }}>
-              <div className="text-center"><div className="font-black text-2xl anim-count" style={{ color: LIME_DK }}>+{sessionXp}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>XP</div></div>
+              <div className="text-center"><div className="font-black text-2xl anim-count" style={{ color: LIME_DK }}>+{sessionXp}</div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>XP</div></div>
               <div className="w-px h-8" style={{ background: '#E3D9C8' }} />
-              <div className="text-center"><div className="font-black text-2xl" style={{ color: INK }}>{stats.level}</div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
+              <div className="text-center"><div className="font-black text-2xl" style={{ color: INK }}>{stats.level}</div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>LEVEL</div></div>
               <div className="w-px h-8" style={{ background: '#E3D9C8' }} />
-              <div className="text-center"><div className="font-black text-2xl flex items-center gap-1" style={{ color: INK }}>{stats.streak}<Flame size={16} className="text-orange-500" /></div><div className="text-[10px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
+              <div className="text-center"><div className="font-black text-2xl flex items-center gap-1" style={{ color: INK }}>{stats.streak}<Flame size={16} className="text-orange-500" /></div><div className="text-[11px] font-bold" style={{ color: '#A89F8E' }}>STREAK</div></div>
             </div>)}
             {nextSuggestion ? (<>
               <button onClick={() => { if (nextSuggestion.tab === 'dialogue') { setNextSuggestion(null); const pool = DIALOGUES.filter(d => stats.completedLessons.length >= d.unlock.lessons || (inputMinutes / 60) >= d.unlock.hours); startDialogue(pool[Math.floor(Math.random() * pool.length)]); } else if (nextSuggestion.tab === 'progress') { setNextSuggestion(null); setView('progress'); } else { setTab(nextSuggestion.tab); setNextSuggestion(null); setView('tabs'); } }} className="w-full py-4 rounded-2xl font-black text-white mb-2" style={{ background: LIME_DK }}>{nextSuggestion.label} →</button>
-              <button onClick={() => { setCorrectedFrom(null); setNextSuggestion(null); setView('tabs'); }} className="w-full py-2.5 rounded-2xl font-bold text-sm" style={{ background: '#F3ECE0', color: INK }}>Back to home</button>
+              <button onClick={() => { setCorrectedFrom(null); setNextSuggestion(null); setView('tabs'); }} className="w-full py-2.5 rounded-2xl font-bold text-base" style={{ background: '#F3ECE0', color: INK }}>Back to home</button>
             </>) : (<button onClick={() => { setCorrectedFrom(null); setView('tabs'); }} className="w-full py-4 rounded-2xl font-black text-white" style={{ background: LIME_DK }}>Continue</button>)}
           </div>
         </div>
