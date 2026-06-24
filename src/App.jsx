@@ -550,6 +550,7 @@ export default function Camino() {
   const [reviewIdx, setReviewIdx] = useState(0);
   const [reviewRevealed, setReviewRevealed] = useState(false);
   const [tapQueue, setTapQueue] = useState([]);
+  const [fillQueue, setFillQueue] = useState([]);
   const [tapAnswered, setTapAnswered] = useState(null);
   const [matchItems, setMatchItems] = useState([]);
   const [matchCards, setMatchCards] = useState([]);
@@ -802,20 +803,36 @@ export default function Camino() {
     const options = [...new Set([correctText, ...decoys])].sort(() => Math.random() - 0.5);
     return { ...it, direction, correctText, options };
   });
+  const buildFillQueue = (dueMulti) => dueMulti.map(it => {
+    const words = it.es.trim().split(' ');
+    let blankIdx = words.findIndex(w => GLUE_LOOKUP[stripPunct(w).toLowerCase()]);
+    if (blankIdx === -1) {
+      const candidates = words.map((w, i) => ({ w, i })).filter(x => stripPunct(x.w).length >= 3);
+      blankIdx = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)].i : 0;
+    }
+    return { ...it, words, blankIdx, answer: stripPunct(words[blankIdx]) };
+  });
   const startReview = () => {
     const today = new Date().toISOString().slice(0, 10);
     const due = reviewItems.filter(it => it.nextDue <= today);
     if (due.length === 0) return;
     const pool = reviewItems;
+    const dueMulti = due.filter(it => it.es.trim().split(' ').length >= 2);
     let mode = 'flashcard';
     const roll = Math.random();
-    if (due.length >= 3 && pool.length >= 4) { if (roll < 0.34) mode = 'match'; else if (roll < 0.67) mode = 'tap'; }
+    if (due.length >= 3 && pool.length >= 4) {
+      if (roll < 0.25) mode = 'match';
+      else if (roll < 0.5) mode = 'tap';
+      else if (roll < 0.75 && dueMulti.length >= 1) mode = 'fillblank';
+    }
     setReviewMode(mode);
     if (mode === 'flashcard') {
       const shuffled = [...due].sort(() => Math.random() - 0.5).map(it => ({ ...it, direction: Math.random() < 0.5 ? 'recognize' : 'produce' }));
       setReviewQueue(shuffled); setReviewIdx(0); setReviewRevealed(false);
     } else if (mode === 'tap') {
       setTapQueue(buildTapQueue(due, pool)); setReviewIdx(0); setTapAnswered(null);
+    } else if (mode === 'fillblank') {
+      setFillQueue(buildFillQueue(dueMulti)); setReviewIdx(0); setHeard(''); setMatchResult(null);
     } else {
       const chosen = [...due].sort(() => Math.random() - 0.5).slice(0, Math.min(6, due.length));
       let cards = [];
@@ -1205,14 +1222,14 @@ export default function Camino() {
   }
 
   if (view === 'review') {
-    const totalCount = reviewMode === 'match' ? matchItems.length : reviewMode === 'tap' ? tapQueue.length : reviewQueue.length;
+    const totalCount = reviewMode === 'match' ? matchItems.length : reviewMode === 'tap' ? tapQueue.length : reviewMode === 'fillblank' ? fillQueue.length : reviewQueue.length;
     const currentCount = reviewMode === 'match' ? Math.floor(matchCards.filter(c => c.solved).length / 2) : reviewIdx;
     return (
       <div className="min-h-screen flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', background: CREAM, fontFamily: 'system-ui, sans-serif' }}>
         <Keyframes />
         <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
           <div className="px-6 pt-6 flex items-center gap-3"><button onClick={() => setView('tabs')} style={{ color: '#A89F8E' }}><X size={22} /></button><div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#EFE6D8' }}><div className="h-full rounded-full transition-all" style={{ width: `${totalCount ? (currentCount / totalCount) * 100 : 0}%`, background: LIME_DK }} /></div><span className="text-sm font-bold" style={{ color: '#A89F8E' }}>{currentCount}/{totalCount}</span></div>
-          <div className="px-6 pt-3"><div className="inline-block text-[11px] font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · {reviewMode === 'match' ? 'MEMORY MATCH' : reviewMode === 'tap' ? 'QUICK TAP' : 'SPACED REVIEW'}</div></div>
+          <div className="px-6 pt-3"><div className="inline-block text-xs font-black tracking-widest px-3 py-1 rounded-full" style={{ background: '#F1F8E4', color: LIME_DK }}>REPASO · {reviewMode === 'match' ? 'MEMORY MATCH' : reviewMode === 'tap' ? 'QUICK TAP' : reviewMode === 'fillblank' ? 'FILL THE GAP' : 'SPACED REVIEW'}</div></div>
 
           {reviewMode === 'flashcard' && (() => {
             const item = reviewQueue[reviewIdx];
@@ -1258,6 +1275,37 @@ export default function Camino() {
               </div>
             );
           })()}
+
+          {reviewMode === 'fillblank' && (() => {
+            const item = fillQueue[reviewIdx];
+            if (!item) return null;
+            const checkAnswer = () => {
+              listen(item.answer, (ok) => {
+                updateReviewBox(item.es, ok);
+                setTimeout(() => {
+                  if (reviewIdx < fillQueue.length - 1) { setReviewIdx(reviewIdx + 1); setHeard(''); setMatchResult(null); }
+                  else finishReviewSession(fillQueue);
+                }, 1300);
+              });
+            };
+            return (
+              <div className="flex-1 flex flex-col items-center justify-center px-6">
+                <div className="text-base font-bold uppercase tracking-wide mb-4" style={{ color: '#A89F8E' }}>Fill in the missing word</div>
+                <div className="text-2xl font-bold text-center mb-3 leading-relaxed">
+                  {item.words.map((w, i) => i === item.blankIdx ? <span key={i} style={{ borderBottom: `3px dotted ${CORAL}`, color: CORAL }}>____</span> : <span key={i} style={{ color: INK }}> {w} </span>)}
+                </div>
+                <div className="text-sm mb-6 text-center" style={{ color: '#8A8478' }}>{item.en}</div>
+                <button onClick={checkAnswer} disabled={listening || !!heard} className="w-full rounded-2xl py-4 flex items-center justify-center gap-3 font-bold text-white" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={20} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say the missing word'}</button>
+                {heard && (
+                  <div className="rounded-2xl p-3 mt-3 text-center w-full anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}>
+                    <div className="font-bold text-base" style={{ color: INK }}>{heard}</div>
+                    <div className="text-sm font-black mt-1" style={{ color: matchResult === 'good' ? LIME_DK : matchResult === 'close' ? '#B8901E' : CORAL }}>{matchResult === 'good' ? pick(camiSay.correct) : matchResult === 'close' ? camiSay.close : `${camiSay.encourage} — it was "${item.answer}"`}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
 
           {reviewMode === 'match' && (
             <div className="flex-1 flex flex-col items-center justify-center px-6">
@@ -1311,29 +1359,33 @@ export default function Camino() {
           {step.from === 'you' && (
             <div className="px-6 pt-2 flex-shrink-0">
               <div className="rounded-3xl p-5" style={{ background: '#fff', border: `1.5px solid ${CORAL}60` }}>
-                <div className="text-[11px] font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
-                {!dlgRevealed ? (<button onClick={() => setDlgRevealed(true)} className="text-base font-bold underline" style={{ color: '#A89F8E' }}>Try it, then tap to reveal</button>) : (<>
-                  <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}><TappableEs text={step.es} sentenceKey={`dlg-you-${dlgIdx}`} activeKey={glueActive?.key} onTap={setGlueActive} /></div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
-                  {glueActive?.key?.startsWith(`dlg-you-${dlgIdx}-`) && <GlueExplain active={glueActive} />}
-                  <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-xs font-medium mb-4 block mt-1" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
-                  <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it out loud'}</button>
-                  {heard && (
-                    <div className="rounded-2xl p-3 text-center mb-2 anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}>
-                      <div className="font-bold text-base" style={{ color: INK }}>{heard}</div>
-                      {matchResult === 'good' && <div className="text-sm font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)}</div>}
-                      {matchResult === 'close' && <div className="text-sm font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}
-                      {matchResult === 'try' && <div className="text-sm font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}
-                    </div>
-                  )}
-                  <RecordPlayback recordedUrl={recordedUrl} onPlay={playRecording} />
-                </>)}
+                <div className="text-xs font-bold uppercase mb-3" style={{ color: CORAL }}>Your turn — {step.prompt}</div>
+                <button onClick={() => listen(step.es)} disabled={listening} className="w-full rounded-xl py-3 flex items-center justify-center gap-2 font-bold text-white mb-2" style={{ background: listening ? '#C2B8A8' : CORAL }}><Mic size={18} className={listening ? 'animate-pulse' : ''} />{listening ? 'Listening...' : 'Say it in Spanish'}</button>
+                {heard && (
+                  <div className="rounded-2xl p-3 text-center mb-2 anim-card-rise" style={{ background: matchResult === 'good' ? '#F1F8E4' : matchResult === 'close' ? '#FFF3D6' : '#FFEDE9', border: `1px solid ${matchResult === 'good' ? LIME : matchResult === 'close' ? '#E5B84B' : CORAL}` }}>
+                    <div className="font-bold text-base" style={{ color: INK }}>{heard}</div>
+                    {matchResult === 'good' && <div className="text-sm font-black mt-1" style={{ color: LIME_DK }}>{pick(camiSay.correct)}</div>}
+                    {matchResult === 'close' && <div className="text-sm font-black mt-1" style={{ color: '#B8901E' }}>{camiSay.close}</div>}
+                    {matchResult === 'try' && <div className="text-sm font-black mt-1" style={{ color: CORAL }}>{camiSay.encourage}</div>}
+                  </div>
+                )}
+                <RecordPlayback recordedUrl={recordedUrl} onPlay={playRecording} />
+                {!dlgRevealed ? (
+                  <button onClick={() => setDlgRevealed(true)} className="text-sm font-bold underline mt-2 block" style={{ color: '#A89F8E' }}>Stuck? Tap to see it written</button>
+                ) : (
+                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F3ECE0' }}>
+                    <div className="flex items-center gap-3 mb-1"><div className="text-xl font-black" style={{ color: INK }}><TappableEs text={step.es} sentenceKey={`dlg-you-${dlgIdx}`} activeKey={glueActive?.key} onTap={setGlueActive} /></div><button onClick={() => speak(step.es)} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#F1F8E4' }}><Volume2 size={16} style={{ color: LIME_DK }} /></button></div>
+                    {glueActive?.key?.startsWith(`dlg-you-${dlgIdx}-`) && <GlueExplain active={glueActive} />}
+                    <button onClick={() => setRevealedEn(prev => ({ ...prev, [dlgIdx]: !prev[dlgIdx] }))} className="text-xs font-medium block mt-1" style={{ color: '#B5AB9A' }}>{revealedEn[dlgIdx] ? step.en : '🇬🇧 Show translation'}</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           <div className="px-6 pb-8 pt-3 space-y-2 flex-shrink-0">
-            {(step.from === 'them' || dlgRevealed) && <button onClick={advanceDialogue} className="w-full py-4 rounded-2xl font-black text-xl text-white" style={{ background: INK }}>{step.from === 'them' ? 'Continue →' : 'I said it ✓'}</button>}
-            {step.from === 'you' && dlgRevealed && <SkipVoice onSkip={() => skipVoice()} />}
+            <button onClick={advanceDialogue} className="w-full py-4 rounded-2xl font-black text-xl text-white" style={{ background: INK }}>Continue →</button>
+            {step.from === 'you' && <SkipVoice onSkip={() => skipVoice()} />}
           </div>
         </div>
       </div>
